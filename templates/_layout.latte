@@ -1,0 +1,230 @@
+{* _layout.latte — Converge 布局 · 传统侧边栏 v3.0 *}
+{var $zh = false}
+<!DOCTYPE html>
+<html lang="{$lang}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Converge — {$title}</title>
+{* 防闪烁: 页面渲染前应用暗黑模式 *}
+{syntax off}<script>(function(){var m=localStorage.getItem('theme')||'dark';document.documentElement.classList.toggle('dark',m==='dark')})()</script>{/syntax}
+<link rel="stylesheet" href="/build/css/design-tokens.css">
+<link rel="stylesheet" href="/build/css/app-bundle.css">
+<link rel="stylesheet" href="/build/css/app-shell.css">
+<link rel="stylesheet" href="/build/css/dashboard-page.css">
+<link rel="stylesheet" href="/build/css/grid.css">
+<link rel="stylesheet" href="/build/css/precision-common.css">
+<link rel="stylesheet" href="/build/css/stitch-theme.css?v=1">
+<script>
+window.__API = {$apiJson|noescape};
+window.__DATA = {$dataJson|noescape};
+window.__SEARCH_INDEX = {$searchIndexJson|noescape} || [];
+</script>
+<script defer src="/assets/js/command-tracker.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+{$headExtra|noescape}
+{syntax off}<style>
+.precision-topbar-tabs{display:flex;align-items:center;height:100%;gap:2px}
+.precision-topbar-tab{display:inline-flex;align-items:center;height:100%;padding:0 14px;font-size:12px;font-weight:500;letter-spacing:-.01em;color:var(--text-tertiary);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.precision-topbar-tab:hover{color:var(--text-primary)}
+.precision-topbar-tab.active{color:var(--accent);font-weight:600;border-bottom-color:var(--accent)}
+@media(max-width:1024px){.precision-topbar-tab{padding:0 8px;font-size:11px}}
+@media(max-width:640px){.precision-topbar-tab{padding:0 6px;font-size:10px}}
+</style>{/syntax}
+</head>
+<body class="app-shell">
+{var $m = dockMenu()}
+{* 用户角色: admin(全部) / affiliate(联盟) / media_buyer(投放) / team_lead(管理) / developer(技术) *}
+{var $userRole = ($context->role ?? null) ?: ($currentUser['role'] ?? null) ?: 'admin'}
+
+{* ═══ 侧边栏 — Stitch 深色主题 ═══ *}
+<aside class="app-sidebar is-expanded" data-turbo-permanent>
+  {* Brand + CmdK search *}
+  <div class="sidebar-brand-row">
+    <a href="/admin-panel.php" class="sidebar-brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text sidebar-label">Converge</span>
+    </a>
+    <button class="sidebar-search-btn" onclick="openCmdPalette()" title="Search pages... (Ctrl+K)" aria-label="Command palette">
+      <span class="sidebar-search-hint">⌘K</span>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    {* Dashboard — always first for all roles *}
+    <a href="/admin-panel.php" class="sidebar-link" data-nav="dashboard">
+      <span class="sidebar-link-icon">{include 'atoms/icon.latte', name:'dashboard', size:20}</span>
+      <span class="sidebar-link-label sidebar-label">Dashboard</span>
+    </a>
+    <div class="sidebar-section-spacer"></div>
+
+    {foreach $m as $panelKey => $panel}
+    {* 面板级角色过滤: 检查 $panel['roles'] *}
+    {if !isset($panel['roles']) || in_array($userRole, $panel['roles'])}
+    {var $visible = 0}
+    {foreach ($panel['items'] ?? []) as $item}{if in_array($userRole, $item['roles'] ?? ['admin']) && ($item['id'] ?? '') !== 'dashboard'}{do $visible++}{/if}{/foreach}
+    {if $visible > 0}
+    <details class="sidebar-group-details" open data-panel="{$panelKey}">
+    <summary class="sidebar-section">
+      {if isset($panel['label_icon'])}
+      <span class="sidebar-section-icon material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px">{$panel['label_icon']}</span>
+      {/if}
+      {($panel['label_en'] ?? $panelKey)}
+    </summary>
+    <div class="sidebar-group">
+    {foreach ($panel['items'] ?? []) as $item}
+    {if in_array($userRole, $item['roles'] ?? ['admin']) && ($item['id'] ?? '') !== 'dashboard'}
+    {var $svgName = iconSvg($item['icon'] ?? '')}
+    <a href="{$item['url']}" class="sidebar-link" data-nav="{$item['id']}">
+      <span class="sidebar-link-icon">{if $svgName}{include 'atoms/icon.latte', name:$svgName, size:20}{else}{$item['icon']}{/if}</span>
+      <span class="sidebar-link-label sidebar-label">{($item['label_en'] ?? $item['label'] ?? $item['id'])}</span>
+      {if isset($item['shortcut'])}<kbd class="sidebar-shortcut">{$item['shortcut']}</kbd>{/if}
+    </a>
+    {/if}
+    {/foreach}
+    </div>
+    </details>
+    {/if}
+    {/if}
+    {/foreach}
+  </nav>
+
+  <div class="sidebar-footer sidebar-label">
+    <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:8px">
+      <span class="sidebar-role-badge" id="sidebar-role-badge">{$userRole|capitalize}</span>
+      <select id="workflow-selector" onchange="switchWorkflow(this.value)" style="font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-secondary,#c7c4d7) /* token */;padding:2px 4px;cursor:pointer;max-width:130px">
+        <option value="affiliate" {if $userRole=='affiliate'}selected{/if}>🎯 Affiliate</option>
+        <option value="media_buyer" {if $userRole=='media_buyer' || $userRole=='admin'}selected{/if}>🛒 E-commerce</option>
+        <option value="admin" {if $userRole=='admin'}selected{/if}>⚙️ Admin</option>
+      </select>
+    </div>
+    <a href="/docs.php" style="color:inherit;text-decoration:none;font-size:11px">Docs · v2.6</a>
+  </div>
+  {syntax off}
+  <script>
+  function switchWorkflow(mode) {
+    localStorage.setItem('converge_workflow', mode);
+    // Update sidebar visibility based on workflow
+    var panels = document.querySelectorAll('.sidebar-group-details');
+    var campaignPanel = document.querySelector('[data-panel="campaigns"]');
+    var integrationPanel = document.querySelector('[data-panel="integrations"]');
+    var resourcePanel = document.querySelector('[data-panel="resources"]');
+
+    if (mode === 'affiliate') {
+      // Show Campaigns + Resources
+      if (campaignPanel) campaignPanel.style.display = '';
+      if (resourcePanel) resourcePanel.style.display = '';
+      if (integrationPanel) integrationPanel.style.display = 'none';
+    } else if (mode === 'media_buyer' || mode === 'admin') {
+      // Show Integrations (CAPI) + Analytics
+      if (campaignPanel) campaignPanel.style.display = '';
+      if (resourcePanel) resourcePanel.style.display = '';
+      if (integrationPanel) integrationPanel.style.display = '';
+    }
+    document.getElementById('sidebar-role-badge').textContent = mode === 'affiliate' ? 'Affiliate' : (mode === 'media_buyer' ? 'E-com' : 'Admin');
+    // Reload to apply server-side role change
+    fetch('/api-user-theme.php', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({workflow:mode})}).finally(()=>{location.reload()});
+  }
+  // Load saved workflow
+  (function(){
+    var saved = localStorage.getItem('converge_workflow');
+    if (saved && saved !== '{$userRole}') {
+      var sel = document.getElementById('workflow-selector');
+      if (sel) sel.value = saved;
+    }
+  })();
+  </script>
+  {/syntax}
+</aside>
+
+{* ═══ 主内容区 ═══ *}
+<div class="app-main">
+  <header class="app-topbar" data-turbo-permanent>
+    <div class="topbar-left">
+      <nav class="precision-topbar-tabs">
+        {var $precisionPages = [
+          ['id' => 'analysis',   'label' => $zh ? '广告分析' : 'Analysis',  'url' => '/precision-analysis.php'],
+          ['id' => 'funnel',     'label' => $zh ? '漏斗分析' : 'Funnel',    'url' => '/precision-funnel.php'],
+          ['id' => 'tracking',   'label' => $zh ? '追踪调试' : 'Tracking',  'url' => '/precision-tracking.php'],
+        ]}
+        {foreach $precisionPages as $p}
+        <a href="{$p['url']}" class="precision-topbar-tab"
+           data-nav="precision-{$p['id']}"
+           data-track="precision-nav:{$p['id']}:click">{$p['label']}</a>
+        {/foreach}
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <div class="global-search" data-controller="search">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="Search… (Ctrl+K)"
+               data-search-target="input" data-action="input->search#search">
+        <kbd class="search-shortcut-hint">Ctrl+K</kbd>
+      </div>
+      <span class="navbar-date" data-controller="clock" data-clock-locale-value="{$lang}"></span>
+      <div data-controller="toggle" style="position:relative">
+        <span class="navbar-tz" data-action="click->toggle#toggle" style="cursor:pointer">
+          {var $tz = $userTz ?? 'UTC'}
+          {if $tz === 'UTC'}UTC{elseif $tz === 'Asia/Shanghai'}UTC+8{else}{$tz}{/if}
+        </span>
+        <div class="tz-dropdown" data-toggle-target="panel" style="display:none">
+          <a href="?set_tz=UTC" class="tz-item">UTC</a>
+          <a href="?set_tz=America/New_York" class="tz-item">UTC-5</a>
+          <a href="?set_tz=Asia/Shanghai" class="tz-item">UTC+8</a>
+          <a href="?set_tz=Asia/Tokyo" class="tz-item">UTC+9</a>
+        </div>
+      </div>
+      <button data-theme-toggle class="theme-toggle-btn" aria-label="Toggle theme">🌙</button>
+      <div data-controller="toggle" style="position:relative">
+        <button data-action="click->toggle#toggle" style="background:var(--bg-overlay);border:1px solid var(--border-default);border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:14px;padding:0;display:inline-flex;align-items:center;justify-content:center">
+          {substr(($currentUser['name'] ?? 'A'), 0, 1)|upper}
+        </button>
+        <div data-toggle-target="panel" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;min-width:140px;background:var(--bg-raised);border:1px solid var(--border-default);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);z-index:999;padding:4px">
+          <div style="padding:6px 12px 8px;font-size:12px;color:var(--text-tertiary);border-bottom:1px solid var(--border-default);margin-bottom:4px">{$currentUser['name'] ?? 'Admin'}</div>
+          <a href="/billing.php" class="tz-item">💳 Billing</a>
+          <a href="/logout.php" class="tz-item"  style="color:var(--danger)">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-content">
+  {include content}
+  </main>
+</div>
+
+<script src="/build/js/bundle.min.js"></script>
+<script src="/build/js/theme-toggle.js"></script>
+{include 'molecules/command-palette.latte'}
+{syntax off}<script>
+// Sidebar: accordion + active highlight + Turbo SPA navigation
+(function(){
+  function highlightSidebar(path) {
+    document.querySelectorAll('.sidebar-link[data-nav].active').forEach(function(a){a.classList.remove('active')});
+    document.querySelectorAll('.sidebar-link[data-nav]').forEach(function(a){
+      if(a.getAttribute('href')===path||(path==='/'&&a.dataset.nav==='dashboard')){a.classList.add('active');var d=a.closest('details');if(d)d.setAttribute('open','')}
+    });
+  }
+  // Initial highlight
+  highlightSidebar(location.pathname);
+  // Accordion exclusivity
+  document.querySelector('.sidebar-nav').addEventListener('click',function(e){
+    var d=e.target.closest('details');if(!d)return;
+    this.querySelectorAll('details').forEach(function(dd){if(dd!==d)dd.removeAttribute('open')});
+  });
+  // Re-highlight after Turbo navigation (sidebar is data-turbo-permanent)
+  document.addEventListener('turbo:load',function(){highlightSidebar(location.pathname)});
+  // Precision topbar tabs: highlight active tab
+  function highlightPrecisionTab(path) {
+    document.querySelectorAll('.precision-topbar-tab').forEach(function(t){
+      t.classList.toggle('active', t.getAttribute('href') === path);
+    });
+  }
+  highlightPrecisionTab(location.pathname);
+  document.addEventListener('turbo:load',function(){highlightPrecisionTab(location.pathname)});
+})();
+// Cmd+K: expose global shortcut to open command palette
+function openCmdPalette(){var s=window.StimulusApp;if(s&&s.controllers){var c=s.controllers.find(function(x){return x.identifier==='command-palette'});if(c){c.open()}}}
+</script>{/syntax}
+</body>
+</html>

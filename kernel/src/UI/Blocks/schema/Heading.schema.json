@@ -1,0 +1,1 @@
+{"name":"Heading","category":"content","props":{"level":{"type":"enum","values":["1","2","3","4","5","6"],"default":"2","label":"层级"},"text":{"type":"string","default":"标题文字","label":"文字"}},"tokens":["--content-primary"],"status":"stable"}

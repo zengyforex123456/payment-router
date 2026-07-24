@@ -1,0 +1,25 @@
+# Converge SLA 监控 — Cron 配置示例
+#
+# 添加到 crontab:
+#   crontab -e
+#
+# 或 Docker:
+#   将以下行加入 docker/entrypoint.sh
+
+# ── SLA 健康检查 (每5分钟) ──
+*/5 * * * * bash /var/www/converge/scripts/monitor-sla.sh >> /var/log/converge/sla.log 2>&1
+
+# ── SLA 小时级 JSON 快照 (用于趋势分析) ──
+0 * * * * bash /var/www/converge/scripts/monitor-sla.sh --json >> /var/log/converge/sla-hourly.jsonl 2>&1
+
+# ── E2E 每日回归 (凌晨3点) ──
+0 3 * * * bash /var/www/converge/scripts/run-e2e.sh --docker >> /var/log/converge/e2e-daily.log 2>&1
+
+# ── 自愈扫描 (每30分钟) ──
+*/30 * * * * php /var/www/converge/bin/platform heal --fix-fingerprints >> /var/log/converge/heal.log 2>&1
+
+# ── 快照 + 趋势 (每小时) ──
+0 * * * * php /var/www/converge/bin/platform evolve >> /var/log/converge/evolve.log 2>&1
+
+# ── 日志轮转 (每天凌晨2点) ──
+0 2 * * * find /var/log/converge/ -name "*.log" -mtime +30 -delete 2>&1

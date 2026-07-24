@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════
+   Converge Container Queries — 组件自适应
+   替代 @media 视口查询，每个容器独立响应
+   ═══════════════════════════════════════════ */
+
+/* ── Grid 容器: 窄 → 单列 ── */
+.grid-container {
+  container-type: inline-size;
+}
+
+@container (max-width: 480px) {
+  .grid-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@container (max-width: 768px) and (min-width: 481px) {
+  .grid-container[style*="repeat(4,"],
+  .grid-container[style*="repeat(5,"],
+  .grid-container[style*="repeat(6,"],
+  .grid-container[style*="repeat(7,"],
+  .grid-container[style*="repeat(8,"],
+  .grid-container[style*="repeat(9,"],
+  .grid-container[style*="repeat(10,"],
+  .grid-container[style*="repeat(11,"],
+  .grid-container[style*="repeat(12,"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Switcher 容器: 低于阈值 → 堆叠 ── */
+.switcher {
+  container-type: inline-size;
+}
+
+/* 子元素用 min-width 技巧: 在容器够宽时并排，不够宽时堆叠 */
+.switcher > * {
+  flex-basis: calc((var(--switcher-threshold, 480px) - 100%) * 999);
+  flex-grow: 1;
+  min-width: calc(
+    max(0px, (100% - (var(--switcher-limit, 4) - 1) * var(--switcher-gap, var(--space-md))) / var(--switcher-limit, 4))
+  );
+}
+
+/* ── Section 容器查询 ── */
+.section-container {
+  container-type: inline-size;
+}
+
+@container (max-width: 640px) {
+  .section-container > [style*="max-width"] {
+    padding-left: var(--space-md) !important;
+    padding-right: var(--space-md) !important;
+  }
+}
+
+/* ── Sidebar 容器: 窄 → 上下堆叠 ── */
+.sidebar-container {
+  container-type: inline-size;
+}
+
+@container (max-width: 640px) {
+  .sidebar-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── 全局反模式修复: 容器查询下的溢出防护 ── */
+@container (max-width: 360px) {
+  img, video, table, pre, code {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}

@@ -1,0 +1,22 @@
+{* molecules/quick-task.latte — 快速任务入口 (图标+标签+快捷键)
+   @param  $task['icon']     string  emoji
+   @param  $task['label']    string  任务名称
+   @param  $task['desc']     string  一句话描述
+   @param  $task['url']      string  跳转链接
+   @param  $task['shortcut'] string  键盘快捷键提示
+*}
+
+<a href="{$task['url']}" class="quick-task-card"
+   style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-lg,12px);text-decoration:none;transition:all var(--motion-fast,0.15s);cursor:pointer"
+   data-action="click->health#navigateQuickTask">
+  <span style="font-size:1.5rem;flex-shrink:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--surface-overlay);border-radius:var(--radius-md,8px)">{$task['icon']}</span>
+  <div style="flex:1;min-width:0">
+    <div style="font-weight:600;font-size:var(--text-sm);color:var(--content-primary);margin-bottom:2px">{$task['label']}</div>
+    <div style="font-size:var(--text-xs);color:var(--content-tertiary)">{$task['desc']}</div>
+  </div>
+  {if isset($task['shortcut'])}
+    <kbd style="flex-shrink:0;display:inline-block;padding:2px 8px;background:var(--surface-overlay);border:1px solid var(--border-default);border-radius:4px;font-size:11px;font-family:var(--font-mono,monospace);color:var(--content-tertiary)">{$task['shortcut']}</kbd>
+  {/if}
+</a>
+
+<!-- L3:OK quick-task -->

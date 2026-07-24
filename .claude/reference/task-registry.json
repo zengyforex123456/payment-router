@@ -1,0 +1,402 @@
+{
+  "_meta": {
+    "version": "3.0",
+    "principle": "菜单=任务路径. 每一项回答: 用户来这做什么? 完成后去哪?",
+    "user_roles": {
+      "admin": "系统管理员 — 全权限",
+      "media_buyer": "投手 — 跑量·监控·止损·放量",
+      "affiliate": "联盟客 — 转化追踪·佣金·Offer",
+      "team_lead": "团队主管 — 概览·绩效·账单",
+      "developer": "开发者 — API·Webhook·审计"
+    },
+    "workflows": [
+      { "id": "launch", "name": "🚀 上线新广告", "steps": ["source", "offer", "lp", "campaign", "track"] },
+      { "id": "monitor", "name": "📊 监控盈亏", "steps": ["dashboard", "stats", "pause", "scale"] },
+      { "id": "diagnose", "name": "🔍 排查问题", "steps": ["attention", "drilldown", "funnel", "fix"] },
+      { "id": "analyze", "name": "📈 分析优化", "steps": ["report", "funnel", "attribution", "compare"] },
+      { "id": "setup", "name": "⚙️ 系统配置", "steps": ["integrate", "team", "billing", "audit"] }
+    ]
+  },
+  "tasks": [
+    {
+      "id": "dashboard",
+      "workflow": "monitor",
+      "need": "我今天赚了还是赔了？哪些广告需要我立刻处理？",
+      "icon": "dashboard",
+      "label_en": "Workbench",
+      "label_zh": "工作台",
+      "url": "/admin-panel.php",
+      "roles": ["admin", "affiliate", "media_buyer", "team_lead"],
+      "quick": true,
+      "shortcut": "Ctrl+D"
+    },
+    {
+      "id": "campaign-create",
+      "workflow": "launch",
+      "need": "我要新建一个广告活动，设置流量源、Offer、着陆页、预算",
+      "icon": "plus",
+      "label_en": "New Campaign",
+      "label_zh": "新建广告",
+      "url": "/setup-wizard.php",
+      "roles": ["admin", "media_buyer", "affiliate"],
+      "quick": true,
+      "shortcut": "Ctrl+N",
+      "related_to": ["campaigns", "traffic-sources", "offers", "landing-pages"]
+    },
+    {
+      "id": "campaigns",
+      "workflow": "monitor",
+      "need": "我的广告哪些在跑？点击多少？转化多少？花多少钱？",
+      "icon": "campaign",
+      "label_en": "All Campaigns",
+      "label_zh": "全部广告",
+      "url": "/campaigns.php",
+      "roles": ["admin", "media_buyer", "affiliate", "team_lead"],
+      "siblings": ["campaign-stats", "campaign-detail"]
+    },
+    {
+      "id": "campaign-stats",
+      "workflow": "analyze",
+      "need": "这个广告的详细数据——小时趋势、地区分布、设备、ROI",
+      "icon": "chart",
+      "label_en": "Campaign Stats",
+      "label_zh": "广告详情",
+      "url": "/campaign-detail.php",
+      "roles": ["admin", "media_buyer", "affiliate"],
+      "triggered_by": ["attention-card:money_losing"]
+    },
+    {
+      "id": "find-losers",
+      "workflow": "diagnose",
+      "need": "哪些广告在亏钱？ROI<0 的立刻暂停止损",
+      "icon": "alert",
+      "label_en": "Money Losers",
+      "label_zh": "亏损广告",
+      "url": "/campaigns.php?filter=low_roi",
+      "roles": ["admin", "media_buyer"],
+      "quick": true,
+      "triggered_by": ["attention-card:money_losing"]
+    },
+    {
+      "id": "auto-rules",
+      "workflow": "monitor",
+      "need": "设置自动规则：ROI<1.0 连续24h→自动暂停，高转化→加预算",
+      "icon": "code",
+      "label_en": "Auto Rules",
+      "label_zh": "自动规则",
+      "url": "/auto-rules.php",
+      "roles": ["admin", "media_buyer"]
+    },
+    {
+      "id": "funnel",
+      "workflow": "analyze",
+      "need": "从点击→LP→Offer→转化，每一步流失多少？瓶颈在哪？",
+      "icon": "funnel",
+      "label_en": "Funnel Analysis",
+      "label_zh": "漏斗分析",
+      "url": "/funnel.php",
+      "roles": ["admin", "media_buyer", "affiliate"],
+      "triggered_by": ["attention-card:zero_conversions"]
+    },
+    {
+      "id": "reports",
+      "workflow": "analyze",
+      "need": "生成日报/周报——收入、转化、ROI趋势、Top来源",
+      "icon": "trending",
+      "label_en": "Reports",
+      "label_zh": "报表分析",
+      "url": "/reports.php",
+      "roles": ["admin", "media_buyer", "affiliate", "team_lead"]
+    },
+    {
+      "id": "attribution",
+      "workflow": "analyze",
+      "need": "这个转化是哪个渠道带来的？多点触达归因",
+      "icon": "link",
+      "label_en": "Attribution",
+      "label_zh": "归因分析",
+      "url": "/attribution.php",
+      "roles": ["admin", "media_buyer", "affiliate"]
+    },
+    {
+      "id": "click-lookup",
+      "workflow": "diagnose",
+      "need": "查一个具体的点击——有没有跳转？有没有转化？时间线是什么？",
+      "icon": "search",
+      "label_en": "Click Lookup",
+      "label_zh": "点击查询",
+      "url": "/click-lookup.php",
+      "roles": ["admin", "media_buyer", "developer"]
+    },
+    {
+      "id": "visitors",
+      "workflow": "monitor",
+      "need": "访问者日志——谁点了我的链接？从哪来？什么设备？",
+      "icon": "eye",
+      "label_en": "Visitor Log",
+      "label_zh": "访客日志",
+      "url": "/visitors.php",
+      "roles": ["admin", "media_buyer"]
+    },
+    {
+      "id": "bot-monitor",
+      "workflow": "diagnose",
+      "need": "有没有机器人在刷我的点击？拦截了多少？省了多少钱？",
+      "icon": "alert",
+      "label_en": "Bot Blocker",
+      "label_zh": "Bot拦截",
+      "url": "/bot-monitor.php",
+      "roles": ["admin", "media_buyer"],
+      "quick": true,
+      "triggered_by": ["attention-card:bot_surge"]
+    },
+    {
+      "id": "ip-blacklist",
+      "workflow": "diagnose",
+      "need": "管理黑名单IP——手动封禁可疑流量",
+      "icon": "x",
+      "label_en": "IP Blacklist",
+      "label_zh": "IP黑名单",
+      "url": "/ip-blacklist.php",
+      "roles": ["admin", "media_buyer"]
+    },
+    {
+      "id": "proof",
+      "workflow": "diagnose",
+      "need": "自检系统——追踪链接是否正常？Postback是否送达？",
+      "icon": "check",
+      "label_en": "Self-Check",
+      "label_zh": "系统自检",
+      "url": "/proof.php",
+      "roles": ["admin", "developer"]
+    },
+    {
+      "id": "traffic-sources",
+      "workflow": "setup",
+      "need": "接入流量源——Facebook、Google、TikTok、Taboola...",
+      "icon": "globe",
+      "label_en": "Traffic Sources",
+      "label_zh": "流量源",
+      "url": "/traffic-sources.php",
+      "roles": ["admin", "media_buyer"],
+      "related_to": ["campaign-create", "networks"]
+    },
+    {
+      "id": "offers",
+      "workflow": "setup",
+      "need": "管理我的 Offer——佣金多少？什么类型(CPA/CPL/CPS)？",
+      "icon": "billing",
+      "label_en": "Offers",
+      "label_zh": "Offer管理",
+      "url": "/offers.php",
+      "roles": ["admin", "affiliate", "media_buyer"],
+      "related_to": ["campaign-create", "networks"]
+    },
+    {
+      "id": "landing-pages",
+      "workflow": "setup",
+      "need": "创建/编辑着陆页——A/B测试哪个版本转化更好",
+      "icon": "edit",
+      "label_en": "Landing Pages",
+      "label_zh": "着陆页",
+      "url": "/landing-pages.php",
+      "roles": ["admin", "media_buyer"],
+      "related_to": ["campaign-create", "landing-builder"]
+    },
+    {
+      "id": "landing-builder",
+      "workflow": "launch",
+      "need": "可视化编辑器——拖拽组件搭建高转化着陆页",
+      "icon": "edit",
+      "label_en": "LP Builder",
+      "label_zh": "页面编辑器",
+      "url": "/builder.php",
+      "roles": ["admin", "media_buyer"]
+    },
+    {
+      "id": "networks",
+      "workflow": "setup",
+      "need": "接入联盟网络——ClickBank、CJ、ShareASale...",
+      "icon": "link",
+      "label_en": "Aff Networks",
+      "label_zh": "联盟网络",
+      "url": "/networks.php",
+      "roles": ["admin", "affiliate"],
+      "related_to": ["offers", "postback-urls"]
+    },
+    {
+      "id": "postback-urls",
+      "workflow": "setup",
+      "need": "配置转化回传——把转化数据推给流量源/联盟平台",
+      "icon": "external",
+      "label_en": "Postbacks",
+      "label_zh": "转化回传",
+      "url": "/postback-urls.php",
+      "roles": ["admin", "affiliate", "media_buyer"]
+    },
+    {
+      "id": "webhooks",
+      "workflow": "setup",
+      "need": "Webhook 通知——新转化时推送到 Slack/自定义URL",
+      "icon": "external",
+      "label_en": "Webhooks",
+      "label_zh": "Webhook",
+      "url": "/webhooks.php",
+      "roles": ["admin", "developer"]
+    },
+    {
+      "id": "api-keys",
+      "workflow": "setup",
+      "need": "管理 API 密钥——给开发者/第三方工具访问权限",
+      "icon": "copy",
+      "label_en": "API Keys",
+      "label_zh": "API密钥",
+      "url": "/settings-api.php",
+      "roles": ["admin", "developer"]
+    },
+    {
+      "id": "short-links",
+      "workflow": "launch",
+      "need": "生成短链接/QR码——方便分享追踪链接",
+      "icon": "link",
+      "label_en": "Short Links",
+      "label_zh": "短链接",
+      "url": "/short-links.php",
+      "roles": ["admin", "affiliate", "media_buyer"]
+    },
+    {
+      "id": "affiliate",
+      "workflow": "monitor",
+      "need": "我的推广佣金多少？待支付/已支付？推荐链接？排行榜？",
+      "icon": "billing",
+      "label_en": "Commissions",
+      "label_zh": "佣金中心",
+      "url": "/affiliate.php",
+      "roles": ["admin", "affiliate"]
+    },
+    {
+      "id": "experiments",
+      "workflow": "analyze",
+      "need": "A/B测试——哪个LP版本/Offer/流量源的转化率更高？",
+      "icon": "trending",
+      "label_en": "A/B Tests",
+      "label_zh": "A/B测试",
+      "url": "/experiments.php",
+      "roles": ["admin", "media_buyer"]
+    },
+    {
+      "id": "event-log",
+      "workflow": "diagnose",
+      "need": "系统事件日志——追踪所有操作记录",
+      "icon": "clock",
+      "label_en": "Event Log",
+      "label_zh": "事件日志",
+      "url": "/event-log.php",
+      "roles": ["admin", "developer"]
+    },
+    {
+      "id": "audit-trail",
+      "workflow": "setup",
+      "need": "审计追踪——合规要求：谁在何时做了什么操作",
+      "icon": "copy",
+      "label_en": "Audit Trail",
+      "label_zh": "审计追踪",
+      "url": "/audit-trail.php",
+      "roles": ["admin", "team_lead"]
+    },
+    {
+      "id": "team",
+      "workflow": "setup",
+      "need": "管理团队成员——谁可以访问？什么角色？",
+      "icon": "user",
+      "label_en": "Team",
+      "label_zh": "团队管理",
+      "url": "/team.php",
+      "roles": ["admin", "team_lead"]
+    },
+    {
+      "id": "billing",
+      "workflow": "setup",
+      "need": "查看账单——当前套餐、用量、发票、升级",
+      "icon": "billing",
+      "label_en": "Billing",
+      "label_zh": "账单",
+      "url": "/billing.php",
+      "roles": ["admin", "team_lead"]
+    },
+    {
+      "id": "settings",
+      "workflow": "setup",
+      "need": "系统设置——域名、邮件、安全、清理缓存",
+      "icon": "settings",
+      "label_en": "Settings",
+      "label_zh": "系统设置",
+      "url": "/settings.php",
+      "roles": ["admin"]
+    },
+    {
+      "id": "case-studies",
+      "workflow": "analyze",
+      "need": "看成功案例——别人怎么跑的？什么策略有效？",
+      "icon": "external",
+      "label_en": "Case Studies",
+      "label_zh": "成功案例",
+      "url": "/case-studies.php",
+      "roles": ["admin", "media_buyer", "affiliate"]
+    },
+    {
+      "id": "docs",
+      "workflow": "setup",
+      "need": "帮助文档——怎么配置追踪？怎么接入API？",
+      "icon": "copy",
+      "label_en": "Documentation",
+      "label_zh": "帮助文档",
+      "url": "/docs.php",
+      "roles": ["admin", "affiliate", "media_buyer", "developer", "team_lead"]
+    }
+  ],
+  "menus": {
+    "workbench": {
+      "label_en": "Workbench",
+      "label_zh": "工作台",
+      "desc": "每天早上打开的第一页——盈亏、待处理事项、快速操作",
+      "items": ["dashboard"]
+    },
+    "campaigns": {
+      "label_en": "Campaigns",
+      "label_zh": "广告管理",
+      "desc": "创建→监控→优化→暂停，广告全生命周期",
+      "items": ["campaign-create", "campaigns", "find-losers", "auto-rules", "experiments"]
+    },
+    "analyze": {
+      "label_en": "Analyze",
+      "label_zh": "分析优化",
+      "desc": "漏斗、归因、报表——找出问题、发现机会",
+      "items": ["funnel", "reports", "attribution", "click-lookup", "case-studies"]
+    },
+    "defend": {
+      "label_en": "Security",
+      "label_zh": "安全防御",
+      "desc": "防Bot、查异常、自检——保护广告费不被浪费",
+      "items": ["bot-monitor", "ip-blacklist", "visitors", "proof", "event-log", "audit-trail"]
+    },
+    "resources": {
+      "label_en": "Resources",
+      "label_zh": "资源配置",
+      "desc": "流量源、Offer、着陆页——广告活动的三大要素",
+      "items": ["traffic-sources", "offers", "landing-pages", "landing-builder", "networks", "short-links", "affiliate"]
+    },
+    "integrate": {
+      "label_en": "Integration",
+      "label_zh": "集成接入",
+      "desc": "API、Webhook、Postback——让系统互联互通",
+      "items": ["postback-urls", "webhooks", "api-keys"]
+    },
+    "admin": {
+      "label_en": "Admin",
+      "label_zh": "管理",
+      "desc": "团队、账单、设置——系统运营",
+      "items": ["team", "billing", "settings", "docs"]
+    }
+  }
+}

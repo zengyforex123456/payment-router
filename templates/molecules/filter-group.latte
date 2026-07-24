@@ -1,0 +1,10 @@
+{* L2 分子: FilterGroup — 筛选 Tab 组 *}
+{var $controller = $controller ?? 'list-crud'}
+{var $filters = $filters ?? [['value'=>'all','label'=>'全部']]}
+<div class="crud-filters" data-{$controller}-target="filterGroup">
+  {foreach $filters as $f}
+  <button class="crud-filter-btn{if $f['value'] === ($active ?? 'all')} active{/if}"
+          data-action="click->{$controller}#filter"
+          data-{$controller}-value-param="{$f['value']}">{$f['label']}</button>
+  {/foreach}
+</div>

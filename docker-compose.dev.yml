@@ -1,0 +1,80 @@
+# ═══ Converge 本地开发环境 ═══
+# 启动: docker compose -f docker-compose.dev.yml up -d
+# 源码挂载实时同步, 无需重建镜像
+
+name: converge-dev
+
+services:
+  app:
+    build: .
+    ports: ["${APP_PORT:-8080}:80"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DB_HOST: mysql
+      DB_NAME: converge
+      DB_USER: root
+      DB_PASSWORD: dev_pass
+      REDIS_HOST: redis
+      APP_ENV: development
+    volumes:
+      - .:/var/www/converge  # 实时源码同步
+      - ./docker/php-dev.ini:/usr/local/etc/php/conf.d/99-converge.ini  # 开发 PHP 配置
+      - D:/project/zhice-os/projects/converge-core:/var/www/converge-core  # converge-core 包 (composer path repo)
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: dev_pass
+      MYSQL_DATABASE: converge
+    ports: ["3307:3306"]
+    volumes:
+      - dev_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    ports: ["8123:8123", "9000:9000"]
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_DB: converge
+    volumes:
+      - dev_clickhouse:/var/lib/clickhouse
+      - ./database/clickhouse/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  mailpit:
+    image: axllent/mailpit
+    ports: ["8025:8025", "1025:1025"]
+
+  realtime:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.node
+    ports: ["3001:3001"]
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      WS_PORT: "3001"
+    depends_on:
+      - redis
+    volumes:
+      - ./server/realtime-server.js:/app/realtime-server.js:ro
+
+volumes:
+  dev_mysql:
+  dev_clickhouse:

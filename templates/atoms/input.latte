@@ -1,0 +1,7 @@
+{* L1 原子: Input — 表单输入
+   参数: name, type (text|email|number|password), placeholder, required, value *}
+<input type="{($type ?? 'text')}" name="{$name}"
+   class="form-input"
+   {if isset($placeholder)}placeholder="{$placeholder}"{/if}
+   {if isset($value)}value="{htmlspecialchars($value)}"{/if}
+   {if ($required ?? false)}required{/if}>

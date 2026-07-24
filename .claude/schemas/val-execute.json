@@ -1,0 +1,15 @@
+{
+  "interface": "val-execute",
+  "version": "1.0",
+  "grid": { "horizontal": "L3", "vertical": "V0" },
+  "description": "VAL×L3 — 执行层质量验证契约",
+  "validates": {
+    "code-generation": { "tool": "code-quality-gate.js", "checks": ["lint", "build", "static-scan", "run-verify"] },
+    "architecture": { "tool": "validate_pipeline.js", "checks": ["file-sizes", "function-sizes", "layer-direction", "forbidden-patterns"] },
+    "mutation": { "tool": "stryker", "target": ">60%" }
+  },
+  "thresholds": {
+    "lines": 60, "branches": 50, "functions": 60,
+    "mutation": 30, "qualityGate": 70
+  }
+}

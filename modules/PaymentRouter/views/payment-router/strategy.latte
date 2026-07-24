@@ -1,0 +1,44 @@
+{layout 'templates/_layouts/dashboard.latte'}
+{block title}{__('nav.routing_strategy')}{/block}
+
+{block content}
+<div data-controller="payment-router-strategy">
+
+  <h2>{__('strategy.title')}</h2>
+  <p class="text--muted">{__('strategy.description')}</p>
+
+  <form data-action="submit->payment-router-strategy#save" class="form" style="max-width: 500px;">
+    <label>
+      {__('strategy.default_method')}
+      <select name="default_strategy" data-payment-router-strategy-target="strategySelect">
+        <option value="weighted">{__('strategy.weighted')} — {__('strategy.weighted_desc')}</option>
+        <option value="round_robin">{__('strategy.round_robin')} — {__('strategy.round_robin_desc')}</option>
+        <option value="amount_threshold">{__('strategy.amount_threshold')} — {__('strategy.amount_threshold_desc')}</option>
+        <option value="random">{__('strategy.random')} — {__('strategy.random_desc')}</option>
+      </select>
+    </label>
+
+    <label>
+      {__('strategy.cooling_threshold')}
+      <input name="cooling_threshold" type="number" value="3" min="1" max="10"
+             data-payment-router-strategy-target="coolingThreshold">
+      <small>{__('strategy.cooling_threshold_desc')}</small>
+    </label>
+
+    <label>
+      {__('strategy.cooldown_minutes')}
+      <input name="cooldown_minutes" type="number" value="30" min="5" max="1440"
+             data-payment-router-strategy-target="cooldownMinutes">
+      <small>{__('strategy.cooldown_minutes_desc')}</small>
+    </label>
+
+    <button type="submit" class="btn btn--primary">{__('common.save')}</button>
+  </form>
+</div>
+
+{syntax off}<script type="module">
+import StrategyController from "./controllers/payment_router_strategy_controller.js";
+window.Stimulus.register("payment-router-strategy", StrategyController);
+</script>{/syntax}
+{/block}
+<!-- L3:OK strategy -->

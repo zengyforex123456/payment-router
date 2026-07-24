@@ -1,0 +1,1 @@
+{"name":"Alert","category":"content","props":{"variant":{"type":"enum","values":["info","success","warning","danger"],"default":"info","label":"类型"},"text":{"type":"string","default":"提示信息","label":"文字"}},"tokens":["--accent-soft","--success-soft","--warning-soft","--danger-soft"],"status":"stable"}

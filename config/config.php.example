@@ -1,0 +1,88 @@
+<?php
+
+/**
+ * Converge — Configuration template
+ *
+ * Copy to config.php only for manual setup. Prefer the web installer (public/install.php).
+ * NEVER commit config.php to git.
+ */
+
+declare(strict_types=1);
+
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'simplekuma');
+define('DB_USER', 'your_db_user');
+define('DB_PASSWORD', 'your_db_password');
+define('DB_CHARSET', 'utf8mb4');
+define('DB_COLLATE', 'utf8mb4_unicode_ci');
+
+define('BASE_URL', 'https://yourdomain.com');
+define('PUBLIC_WEB_PREFIX', ''); // '' when document root is public/; else '/public'
+define('ASSETS_BASE_URL', rtrim(BASE_URL, '/') . PUBLIC_WEB_PREFIX);
+define('APP_BASE_URL', rtrim(BASE_URL, '/') . PUBLIC_WEB_PREFIX);
+define('APP_KEY', 'generate-a-unique-64-char-hex-key');
+define('APP_ENV', 'production');
+define('APP_DEBUG', false);
+define('SINGLE_ADMIN_MODE', true);
+
+// Click entry URL — query style avoids /km/ fingerprint; legacy /km/ links still work
+// define('CLICK_URL_STYLE', 'query');   // query = go.php?k= | path = /go/{key}
+// define('CLICK_ENTRY_SCRIPT', 'go.php');
+// define('CLICK_PATH_PREFIX', 'go');    // used when CLICK_URL_STYLE=path (pretty short links)
+
+define('APP_TIMEZONE', 'UTC');
+define('SESSION_LIFETIME', 7200);
+define('SESSION_COOKIE_HTTPONLY', true);
+define('SESSION_COOKIE_SECURE', true);
+
+define('HASH_ALGO', PASSWORD_ARGON2ID);
+define('HASH_OPTIONS', [
+    'memory_cost' => 65536,
+    'time_cost' => 4,
+    'threads' => 2,
+]);
+
+define('ROOT_PATH', dirname(__DIR__));
+define('STORAGE_PATH', ROOT_PATH . '/storage');
+define('LOGS_PATH', STORAGE_PATH . '/logs');
+define('CACHE_PATH', STORAGE_PATH . '/cache');
+
+// ── Deployment Mode ──
+// self_hosted: 自部署，用户自己运维（Free 版功能无需 License，Pro/Enterprise 需 License Key）
+// saas:         多租户SaaS，按计划限功能 (需 TenantManager)
+// enterprise:  私有部署，全功能+白标+SLA
+define('DEPLOY_MODE', 'self_hosted');
+
+// ── SaaS (仅 DEPLOY_MODE=saas 时需要) ──
+// define('SAAS_BASE_DOMAIN', 'converge.io');
+// define('STRIPE_API_KEY', 'sk_live_xxx');
+// define('STRIPE_WEBHOOK_SECRET', 'whsec_xxx');
+
+// ── Enterprise (仅 DEPLOY_MODE=enterprise 时需要) ──
+// define('ENTERPRISE_LICENSE_KEY', 'lic_xxxx');
+
+// ── EventStore (SQLite) ──
+// Separate from MySQL for append-only event log + audit trail
+define('EVENTSTORE_PATH', STORAGE_PATH . '/eventstore.db');
+
+// ── Observability ──
+define('LOG_LEVEL', 'debug'); // emergency|alert|critical|error|warning|notice|info|debug
+define('LOG_RETENTION_DAYS', 7);
+
+// ── GeoIP Cache ──
+define('GEOIP_CACHE_ENABLED', true);
+define('GEOIP_CACHE_SIZE', 1000);
+define('GEOIP_CACHE_TTL', 3600);
+
+// ── Resilience ──
+define('CIRCUIT_BREAKER_THRESHOLD', 3);
+define('CIRCUIT_BREAKER_TIMEOUT', 30);
+define('RETRY_MAX_ATTEMPTS', 3);
+define('RETRY_BASE_DELAY_MS', 1000);
+
+// ── Application Start Time (for uptime calculation) ──
+define('APP_START_TIME', microtime(true));
+
+// Set by installer when complete:
+// define('INSTALLED', true);
+// define('INSTALL_DATE', 'YYYY-MM-DD HH:MM:SS');

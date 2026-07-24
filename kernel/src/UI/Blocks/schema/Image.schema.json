@@ -1,0 +1,1 @@
+{"name":"Image","category":"content","props":{"src":{"type":"string","default":"https://placehold.co/800x400","label":"图片URL"},"alt":{"type":"string","default":"图片描述","label":"替代文字"}},"tokens":["--radius-md"],"status":"stable"}

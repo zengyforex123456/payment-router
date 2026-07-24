@@ -1,0 +1,19 @@
+{* Starter Dashboard — Customize this for your project *}
+{layout '../_layout.latte'}
+{var $zh = $zh ?? false}
+{block content}
+<div class="st-dash">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--st-2xl)">
+    <div>
+      <h1 style="font-size:var(--st-text-display);font-weight:700;color:var(--st-text-primary);margin:0">Dashboard</h1>
+      <p style="font-size:var(--st-text-body-sm);color:var(--st-text-tertiary);margin:var(--st-xs) 0 0">Welcome to your new SaaS project.</p>
+    </div>
+  </div>
+  <div class="st-grid st-grid-4">
+    <div class="st-kpi"><div class="st-kpi-label">📊 Sample KPI</div><div class="st-kpi-value">0</div><div class="st-kpi-trend up">Start building!</div></div>
+    <div class="st-kpi"><div class="st-kpi-label">🚀 Get Started</div><div class="st-kpi-value">1</div><div class="st-kpi-trend">Edit this template</div></div>
+    <div class="st-kpi"><div class="st-kpi-label">📖 Docs</div><div class="st-kpi-value">→</div><div class="st-kpi-trend">See .claude/reference/</div></div>
+    <div class="st-kpi"><div class="st-kpi-label">🛠️ Build</div><div class="st-kpi-value">php</div><div class="st-kpi-trend">Start coding!</div></div>
+  </div>
+</div>
+{/block}

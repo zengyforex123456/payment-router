@@ -1,0 +1,99 @@
+{* ═══════════════════════════════════════════
+   molecules/data-table — 数据表格 (暗黑赛博)
+
+   参数:
+     $headers   — 列头数组: [['key'=>'name','label'=>'名称'], ...]
+     $rows      — 数据行二维数组: [['name'=>'Campaign A','clicks'=>123], ...]
+     $rowKey    — 行标识字段名 (用于操作按钮), 默认 'id'
+     $actions   — 操作列定义 (可选): [['label'=>'编辑','icon'=>'✏️','action'=>'edit'], ...]
+     $emptyIcon — 空数据图标, 默认 '📋'
+     $emptyText — 空数据提示, 默认 '暂无数据'
+     $striped   — 条纹行, 默认 true
+     $hoverable — 悬停高亮, 默认 true
+
+   用法:
+     {include '../molecules/data-table.latte',
+        headers => [['key'=>'name','label'=>'名称'],['key'=>'clicks','label'=>'点击']],
+        rows => $campaigns,
+        actions => [['label'=>'编辑','icon'=>'✏️','action'=>'edit'],['label'=>'暂停','icon'=>'⏸','action'=>'pause']]}
+
+   交互: 操作按钮触发 window.dispatchTableAction() → CustomEvent 'table-action'
+        监听: document.addEventListener('table-action', (e) => ...)
+
+   L3 自证: L3:OK data-table
+   ═══════════════════════════════════════════ *}
+
+{* ── 默认值 ── *}
+{var $headers = $headers ?? []}
+{var $rows = $rows ?? []}
+{var $rowKey = $rowKey ?? 'id'}
+{var $actions = $actions ?? []}
+{var $emptyIcon = $emptyIcon ?? '📋'}
+{var $emptyText = $emptyText ?? '暂无数据'}
+{var $striped = $striped ?? true}
+{var $hoverable = $hoverable ?? true}
+
+{* ═══ 空状态 ═══ *}
+{if empty($rows)}
+<div class="dt-empty">
+  <span class="dt-empty-icon">{$emptyIcon }</span>
+  <p class="dt-empty-text">{$emptyText }</p>
+</div>
+{else}
+
+{* ═══ 表格 ═══ *}
+<div class="dt-wrapper">
+  <table class="dt-table{if $striped} dt-striped{/if}{if $hoverable} dt-hover{/if}">
+    <thead>
+      <tr>
+        {foreach $headers as $h}
+        <th class="dt-th">{$h['label'] }</th>
+        {/foreach}
+        {if !empty($actions)}
+        <th class="dt-th dt-th-actions">操作</th>
+        {/if}
+      </tr>
+    </thead>
+    <tbody>
+      {foreach $rows as $row}
+      <tr class="dt-tr">
+        {foreach $headers as $h}
+        <td class="dt-td" data-label="{$h['label'] }">
+          {* 支持传入 HTML 片段 (如 Badge) *}
+          {$row[$h['key']]|noescape}
+        </td>
+        {/foreach}
+
+        {if !empty($actions)}
+        <td class="dt-td dt-td-actions">
+          <div class="dt-actions">
+            {foreach $actions as $act}
+            <button class="dt-action-btn"
+                    onclick="window.dispatchTableAction('{$act['action'] }', '{$row[$rowKey]}', JSON.parse('{  $row|json_encode  }'))"
+                    title="{$act['label'] }"
+                    aria-label="{$act['label'] }">
+              {if isset($act['icon'])}<span class="dt-action-icon">{$act['icon'] }</span>{/if}
+              <span class="dt-action-label">{$act['label'] }</span>
+            </button>
+            {/foreach}
+          </div>
+        </td>
+        {/if}
+      </tr>
+      {/foreach}
+    </tbody>
+  </table>
+</div>
+
+{/if}
+
+{* ═══ 表格行操作 — 通过 window.dispatchTableAction 派发事件 ═══ *}
+{syntax off}
+<script>
+window.dispatchTableAction = function(action, rowId, row) {
+    document.dispatchEvent(new CustomEvent('table-action', { detail: { action: action, rowId: rowId, row: row } }));
+};
+</script>
+{/syntax}
+
+<!-- L3:OK data-table -->

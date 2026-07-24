@@ -1,0 +1,19 @@
+{
+  "interface": "mem-execute",
+  "version": "1.0",
+  "grid": { "horizontal": "L3", "vertical": "M0" },
+  "description": "MEM×L3 — 执行层数据的记忆持久化契约",
+  "produces": {
+    "event-store": { "events": "不可变事件流", "query": "按类型+时间范围查询" },
+    "project-index": { "file": "project_index.json", "fields": ["files", "totalFunctions", "totalLines"] }
+  },
+  "consumes": {
+    "genesis-pipeline": { "events": ["genesis_started", "genesis_code_generated", "genesis_deployed"] },
+    "ci_jobs": { "table": "ci_jobs", "fields": ["id", "status", "build_log"] }
+  },
+  "contract": {
+    "writeLatency": "<100ms",
+    "queryLatency": "<50ms",
+    "consistency": "eventual"
+  }
+}

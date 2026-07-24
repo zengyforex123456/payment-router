@@ -1,0 +1,19 @@
+{
+  "interface": "coo-execute",
+  "version": "1.0",
+  "grid": { "horizontal": "L3", "vertical": "C0" },
+  "description": "COO×L3 — 协调层×执行层 事件总线契约",
+  "events": {
+    "publish": ["genesis_started", "genesis_code_generated", "genesis_deployed", "genesis_failed"],
+    "subscribe": ["ci_submitted", "ci_completed", "ci_failed", "runner_heartbeat"]
+  },
+  "routes": {
+    "frontend_fabric": { "pattern": "/api/v3/*", "envelope": "{ok, data, error, meta}" },
+    "control_plane": { "pattern": "/api/v3/control/*", "methods": ["POST command", "GET pending", "POST ack", "POST result"] }
+  },
+  "contract": {
+    "eventLatency": "<500ms",
+    "routeLatency": "<100ms",
+    "consistency": "eventual"
+  }
+}

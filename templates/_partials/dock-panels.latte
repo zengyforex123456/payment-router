@@ -1,0 +1,18 @@
+{* _partials/dock-panels.latte — 侧边栏面板, 由 page-registry.json 驱动, 双语支持 *}
+{var $m = dockMenu()}
+{var $zh = false}
+
+{foreach ['tracking','funnels','reports','monitoring','system'] as $p}
+<aside id="dock-panel-{$p}" class="side-panel" data-dock-target="panel" data-dock-panel="{$p}"
+  aria-label="{if $zh}{$m[$p]['label_zh'] ?? $p}{else}{$m[$p]['label_en'] ?? $p}{/if}">
+  <div class="panel-section">
+    <div class="panel-header">{if $zh}{$m[$p]['label_zh'] ?? $p}{else}{$m[$p]['label_en'] ?? $p}{/if}</div>
+    <nav class="panel-nav">
+      {foreach ($m[$p]['items'] ?? []) as $item}
+      <a href="{$item['url']}" class="panel-link" data-turbo="false" {if ($item['id'] ?? '') === 'dashboard'}aria-current="page"{/if}>
+        <span class="panel-link-icon">{$item['icon']}</span> {if $zh}{($item['label_zh'] ?? $item['label'] ?? $item['id'])}{else}{($item['label_en'] ?? $item['label'] ?? $item['id'])}{/if}</a>
+      {/foreach}
+    </nav>
+  </div>
+</aside>
+{/foreach}

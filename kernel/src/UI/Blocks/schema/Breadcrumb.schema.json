@@ -1,0 +1,1 @@
+{"name":"Breadcrumb","category":"content","props":{"items":{"type":"array","default":[{"label":"Home","url":"/"},{"label":"Users"}],"label":"Items"},"separator":{"type":"string","default":"/","label":"Separator"}},"tokens":["--content-primary","--content-secondary","--content-tertiary","--accent"],"status":"stable"}

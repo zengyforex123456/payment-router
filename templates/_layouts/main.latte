@@ -1,0 +1,157 @@
+{* ═══════════════════════════════════════════
+   _layouts/main.latte — Converge 主后台布局
+
+   令牌: design-tokens.css
+   交互: Stimulus (shell = 侧边栏, dropdown = 所有下拉)
+
+   用法:
+     {layout '../_layouts/main.latte'}
+     {block title}Dashboard{/block}
+     {block topbarRight}...{/block}
+     {block sidebarBottom}...{/block}
+     {block content}...{/block}
+
+   可用变量:
+     $user         — ['name' => '...', 'avatar' => '...', 'role' => 'Admin']
+     $roles        — ['Admin', 'Manager', 'Buyer'] (角色切换列表)
+     $menuItems    — [['label'=>'仪表盘','icon'=>'📊','url'=>'...','active'=>true]]
+     $timeFilter   — 'today' | '7d' | '30d' | 'custom'
+     $timeLabels   — ['today'=>'今天', '7d'=>'近7天', ...]
+   ═══════════════════════════════════════════ *}
+
+{* ── 默认值 ── *}
+{var $user = array_merge(['name' => 'User', 'avatar' => null, 'role' => 'Admin'], (array)($user ?? []))}
+{var $roles = $roles ?? ['Admin', 'Manager', 'Buyer']}
+{var $menuItems = $menuItems ?? []}
+{var $timeFilter = $timeFilter ?? 'today'}
+{var $timeLabels = $timeLabels ?? ['today'=>'今天','7d'=>'近7天','30d'=>'近30天','90d'=>'近90天']}
+
+<!DOCTYPE html>
+<html lang="{ $lang ?? 'en' }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Converge — {block title}Dashboard{/block}</title>
+{* 防闪烁: 页面渲染前应用暗黑模式 *}
+{syntax off}<script>(function(){var m=localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.classList.toggle('dark',m==='dark')})()</script>{/syntax}
+
+  {* 资源预连接 *}
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <link rel="stylesheet" href="/build/css/design-tokens.css">
+  <link rel="stylesheet" href="/build/css/dashboard-page.css">
+<link rel="stylesheet" href="/build/css/app-shell.css">
+  <link rel="stylesheet" href="/build/css/grid.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4" defer></script>
+  {block headExtra}{/block}
+</head>
+
+{* ═══ App Shell — Stimulus shell_controller 驱动 ═══ *}
+<body data-controller="shell layout-debug" data-shell-sidebar-open-value="true" data-shell-current-role-value="{$user['role']}"
+      class="app-shell" data-action="keydown.escape->shell#closeSidebar">
+
+{* ═══ 侧边栏 ═══ *}
+<aside class="app-sidebar is-expanded" data-shell-target="sidebar">
+
+  {* Logo 区 *}
+  <div class="sidebar-brand">
+    <span class="brand-dot"></span>
+    <span class="brand-text sidebar-label">Converge</span>
+  </div>
+
+  {* 导航菜单 — 由 $menuItems 数组驱动 *}
+  <nav class="sidebar-nav">
+    {foreach $menuItems as $item}
+    <a href="{$item['url'] }"
+       class="sidebar-link {if $item['active'] ?? false}active{/if}"
+       title="{$item['label'] }">
+      <span class="sidebar-link-icon">{$item['icon'] }</span>
+      <span class="sidebar-link-label sidebar-label">{$item['label'] }</span>
+      {if isset($item['badge'])}
+      <span class="sidebar-badge sidebar-label">{$item['badge'] }</span>
+      {/if}
+    </a>
+    {/foreach}
+  </nav>
+
+  {* 侧边栏底部 — 子模板可扩展 *}
+  <div class="sidebar-footer sidebar-label">
+    {block sidebarBottom}{/block}
+  </div>
+</aside>
+
+{* ═══ 主内容区 ═══ *}
+<div class="app-main">
+
+  {* ═══ 顶部栏 ═══ *}
+  <header class="app-topbar">
+
+    {* 左侧: 汉堡按钮 + 时间筛选 *}
+    <div class="topbar-left">
+      <button class="topbar-btn-icon" data-action="click->shell#toggleSidebar"
+              aria-label="Toggle sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+
+      {* 全局时间筛选器 *}
+      <div class="topbar-time-filter" data-controller="dropdown" data-dropdown-close-outside-value="true">
+        <button class="topbar-btn-filter" data-action="click->dropdown#toggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span>{$timeLabels[$timeFilter] ?? 'Today'}</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="topbar-dropdown" data-dropdown-target="panel" style="display:none">
+          <a href="?range=today"  class="topbar-dropdown-item {($timeFilter === 'today') ? 'active' : ''}">{$timeLabels['today'] ?? '今天'}</a>
+          <a href="?range=7d"    class="topbar-dropdown-item {($timeFilter === '7d') ? 'active' : ''}">{$timeLabels['7d'] ?? '近7天'}</a>
+          <a href="?range=30d"   class="topbar-dropdown-item {($timeFilter === '30d') ? 'active' : ''}">{$timeLabels['30d'] ?? '近30天'}</a>
+          <a href="?range=90d"   class="topbar-dropdown-item {($timeFilter === '90d') ? 'active' : ''}">{$timeLabels['90d'] ?? '近90天'}</a>
+        </div>
+      </div>
+    </div>
+
+    {* 右侧: 用户区 *}
+    <div class="topbar-right">
+      {block topbarRight}{/block}
+
+      {* 用户头像 *}
+      <div class="topbar-user" data-controller="dropdown" data-dropdown-close-outside-value="true">
+        <button class="topbar-btn-avatar" data-action="click->dropdown#toggle"
+                aria-label="User menu">
+          {if $user['avatar']}
+          <img src="{$user['avatar'] }" alt="{$user['name'] }" class="avatar-img">
+          {else}
+          <span class="avatar-placeholder">{substr(($user['name'] ?: 'U'), 0, 1)}</span>
+          {/if}
+        </button>
+        <div class="topbar-dropdown right" data-dropdown-target="panel" style="display:none">
+          <div class="topbar-dropdown-header">{$user['name'] }</div>
+          <a href="/settings.php" class="topbar-dropdown-item">⚙️ 设置</a>
+          <a href="/billing.php" class="topbar-dropdown-item">💳 账单</a>
+          <hr class="topbar-dropdown-divider">
+          <a href="/logout.php" class="topbar-dropdown-item text-danger">🚪 退出</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {* ═══ 内容区 — 子页面通过 {block content} 注入 ═══ *}
+  <main class="app-content">
+    {block content}{/block}
+  </main>
+
+</div>
+
+{* ═══ JS: Stimulus bundle ═══ *}
+<script src="/build/js/bundle.min.js"></script>
+<script src="/build/js/theme-toggle.js"></script>
+
+{* App Shell CSS → public/build/css/app-shell.css *}
+
+<!-- L3:OK main -->
+</body>
+</html>

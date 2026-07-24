@@ -1,0 +1,21 @@
+{* L2 分子: StatCard — KPI 指标卡片
+   参数: icon, label, value, change, trend (up|down|flat) *}
+{var $trend = $trend ?? 'flat'}
+{var $trendColor = ($trend === 'up') ? 'var(--success)' : (($trend === 'down') ? 'var(--danger)' : 'var(--text-tertiary)')}
+{var $trendArrow = ($trend === 'up') ? '↑' : (($trend === 'down') ? '↓' : '→')}
+
+<div class="kpi-card">
+  <div class="kpi-header">
+    {if isset($icon)}<span class="kpi-icon">{$icon}</span>{/if}
+    <span class="kpi-title">{$label}</span>
+  </div>
+  <div class="kpi-body">
+    <data class="kpi-value">{$value}</data>
+    {if isset($change)}
+    <span class="kpi-change" style="color:{$trendColor}">
+      <span class="kpi-arrow">{$trendArrow}</span>
+      <span>{$change}</span>
+    </span>
+    {/if}
+  </div>
+</div>

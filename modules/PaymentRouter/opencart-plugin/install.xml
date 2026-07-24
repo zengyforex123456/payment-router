@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>AB Payment Router — B-Site Extension</name>
+    <code>ab_payment_router</code>
+    <version>0.1.0</version>
+    <author>Converge</author>
+    <link>https://github.com/converge/payment-router</link>
+
+    <!--
+    OpenCart Extension Installer manifest.
+    安装方法:
+      1. 将 upload/ 目录内容复制到 OpenCart 根目录
+      2. 进入 Admin → Extensions → Payments → AB Payment Router → Install
+      3. 配置 Controller URL + Shared Secret + Gateway
+    -->
+
+    <!-- 自动创建映射表 (install() 方法被调用时执行) -->
+    <file path="admin/controller/extension/payment/ab_router.php">
+        <operation>
+            <search><![CDATA[public function install()]]></search>
+            <add position="after"><![CDATA[
+                $this->load->model('extension/payment/ab_router');
+                $this->model_extension_payment_ab_router->install();
+            ]]></add>
+        </operation>
+    </file>
+</modification>

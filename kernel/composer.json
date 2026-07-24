@@ -1,0 +1,46 @@
+{
+    "name": "zhice-os/kernel",
+    "version": "3.2.0",
+    "description": "ZhiceOS Kernel — immutable SaaS foundation (Auth, Security, EventBus, UI, I18n, ModuleLoader)",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-mysqli": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "latte/latte": "^3.0",
+        "phpmailer/phpmailer": "^6.9",
+        "predis/predis": "^2.0",
+        "matomo/device-detector": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Converge\\": "src/"
+        },
+        "files": [
+            "src/I18n/helpers.php",
+            "src/Foundation/Database/db.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Converge\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
+    "scripts": {
+        "test": "phpunit -c phpunit.xml"
+    }
+}

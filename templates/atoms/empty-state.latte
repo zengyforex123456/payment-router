@@ -1,0 +1,10 @@
+{* molecules/empty-state — 空数据提示 *}
+{* 参数: $icon, $title, $desc, $cta_url, $cta_text *}
+<div class="text-center py-20">
+  <p class="text-4xl mb-4">{$icon ?? '📋'}</p>
+  <p class="text-lg text-ink font-medium mb-2">{$title }</p>
+  {if $desc}<p class="text-sm text-faint mb-6">{$desc }</p>{/if}
+  {if $cta_url}
+    <a href="{$cta_url }" class="btn btn-primary px-6 py-3 text-sm no-underline">{$cta_text }</a>
+  {/if}
+</div>

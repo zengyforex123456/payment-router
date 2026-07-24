@@ -1,0 +1,90 @@
+{* ═══════════════════════════════════════════
+   模式 1: Dashboard — KPI行 + 图表网格 + 活动Feed
+
+   覆盖页面: 仪表盘、分析概览、实时统计
+   组件树:
+     L5 Page → L4 Template (main.latte) → L3 Organisms
+       ├── KPI Row (L2 stat-card × N)
+       ├── Chart Grid (L3 organism: trend-chart + AI insights)
+       └── Activity Feed (L3 organism: activity-list)
+   ═══════════════════════════════════════════ *}
+
+{layout '../_layouts/main.latte'}
+
+{block content}
+<div class="dashboard-page" style="max-width:var(--container-max,1280px);margin:0 auto;display:flex;flex-direction:column;gap:var(--space-6)">
+
+  {* ── 页面头部 ── *}
+  <div class="db-header">
+    <h1 class="db-title">{$pageTitle ?? '仪表盘'}</h1>
+    <span class="db-subtitle">{$subtitle ?? ''}</span>
+  </div>
+
+  {* ── L2 分子: KPI 卡片行 (PHP 注入) ── *}
+  <div class="db-kpi-row">
+    {foreach $kpis ?? [] as $kpi}
+      {include '../molecules/stat-card.latte',
+        icon: ($kpi['icon'] ?? '📊'),
+        label: ($kpi['label'] ?? ''),
+        value: ($kpi['value'] ?? '0'),
+        change: ($kpi['change'] ?? null),
+        trend: ($kpi['trend'] ?? 'flat')}
+    {/foreach}
+  </div>
+
+  {* ── L3 生物体: 双列图表网格 ── *}
+  <div class="db-main-grid">
+    <div class="db-chart-card">
+      <div class="db-card-header">
+        <h2 class="db-card-title">📈 趋势</h2>
+        <div class="db-chart-legend">
+          <span><span class="db-legend-dot" style="background:var(--accent)"></span>访客</span>
+          <span><span class="db-legend-dot" style="background:var(--info)"></span>收入</span>
+        </div>
+      </div>
+      <div class="db-chart-body">
+        <div id="trend-chart" style="width:100%;height:320px"></div>
+      </div>
+    </div>
+
+    <div class="db-insights-card">
+      <div class="db-card-header">
+        <h2 class="db-card-title"><span class="db-ai-pulse"></span>AI 洞察</h2>
+        <span class="db-card-badge">实时</span>
+      </div>
+      <div class="db-insights-body">
+        {if empty($insights ?? [])}
+          {include '../molecules/empty-state.latte',
+            icon: '🤖', title: 'AI 分析中',
+            desc: '系统正在分析最近24小时数据',
+            variant: 'empty'}
+        {else}
+        <ul class="db-insights-list">
+          {foreach $insights as $insight}
+          <li class="db-insight-item"><span class="db-insight-bullet"></span>{htmlspecialchars($insight)}</li>
+          {/foreach}
+        </ul>
+        {/if}
+      </div>
+    </div>
+  </div>
+
+  {* ── L3 生物体: 最近活动 ── *}
+  {if !empty($recentActivity ?? [])}
+  <div class="db-activity-card">
+    <div class="db-card-header"><h2 class="db-card-title">🕐 最近活动</h2></div>
+    <div class="db-activity-list">
+      {foreach $recentActivity as $act}
+      <div class="db-activity-item">
+        <span class="db-activity-icon">{$act['icon'] ?? '📌'}</span>
+        <div class="db-activity-body">
+          <span>{htmlspecialchars($act['text'] ?? '')}</span>
+          <span class="db-activity-time">{htmlspecialchars($act['time'] ?? '')}</span>
+        </div>
+      </div>
+      {/foreach}
+    </div>
+  </div>
+  {/if}
+</div>
+{/block}

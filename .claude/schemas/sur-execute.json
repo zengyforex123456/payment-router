@@ -1,0 +1,16 @@
+{
+  "interface": "sur-execute",
+  "version": "1.0",
+  "grid": { "horizontal": "L3", "vertical": "S0" },
+  "description": "SUR×L3 — 监控层×执行层 可观测契约",
+  "metrics": {
+    "health": { "endpoint": "GET /api/health", "interval": "30s", "fields": ["status", "memory", "cpu", "uptime"] },
+    "alerts": { "rules": ["mem_critical(>90%)", "cpu_high(>80%)", "status_critical", "disk_full(>95%)"], "channels": ["console", "webhook"] },
+    "errors": { "capture": "error-guard.js", "fingerprint": true, "dedup": true }
+  },
+  "thresholds": {
+    "healthCheckInterval": 30000,
+    "alertCooldown": 300000,
+    "errorRateMax": 5
+  }
+}

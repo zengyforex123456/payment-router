@@ -1,0 +1,31 @@
+{* L2 分子: EmptyState — 空数据五种场景
+   参数: icon, title, desc, ctaUrl, ctaText, ctaAction, variant (empty|error|loading|filtered)
+   
+   variant=empty:    "还没有数据" — 主要 CTA
+   variant=error:    "加载失败"   — 重试按钮
+   variant=loading:  "加载中..."  — 骨架屏
+   variant=filtered: "无匹配结果" — 清除筛选 *}
+
+{var $icon = $icon ?? '📋'}
+{var $title = $title ?? '暂无数据'}
+{var $desc = $desc ?? ''}
+{var $variant = $variant ?? 'empty'}
+{var $ctaText = $ctaText ?? ''}
+
+<div class="empty-state empty-state-{$variant}">
+  <span class="empty-state-icon">{$icon}</span>
+  <h3 class="empty-state-title">{$title}</h3>
+  {if $desc}<p class="empty-state-desc">{$desc}</p>{/if}
+  
+  {if $variant === 'error'}
+    {include '../atoms/button.latte', text: ($ctaText ?: '重试'), variant: 'primary', dataAction: ($ctaAction ?? '')}
+  {elseif $variant === 'filtered'}
+    <a href="?" class="btn btn-ghost btn-sm">清除筛选</a>
+  {elseif $variant !== 'loading' && $ctaText}
+    {if isset($ctaUrl)}
+      {include '../atoms/button.latte', text: $ctaText, variant: 'primary', href: $ctaUrl}
+    {else}
+      {include '../atoms/button.latte', text: $ctaText, variant: 'primary', dataAction: ($ctaAction ?? '')}
+    {/if}
+  {/if}
+</div>

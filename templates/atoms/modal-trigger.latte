@@ -1,0 +1,7 @@
+{* L1 原子: ModalTrigger — 触发弹窗的按钮 (data-* 透传) *}
+<button class="btn btn-{($variant ?? 'primary')} btn-{($size ?? 'md')}"
+  data-action="click->{$controller}#{$action}"
+  {if isset($params)}{foreach $params as $k => $v}data-{$controller}-{$k}-param="{$v}" {/foreach}{/if}>
+  {if isset($icon)}<span class="btn-icon">{$icon}</span>{/if}
+  <span>{$text}</span>
+</button>

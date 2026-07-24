@@ -1,0 +1,18 @@
+{* L1 原子: Button — 零逻辑，纯渲染
+   参数: text, variant (primary|ghost|danger), size (sm|md|lg),
+         href, disabled, ariaLabel, dataAction *}
+{var $variant = $variant ?? 'primary'}
+{var $size = $size ?? 'md'}
+{var $disabled = $disabled ?? false}
+
+{if isset($href)}
+<a href="{$href}" class="btn btn-{$variant} btn-{$size}{if $disabled} disabled{/if}"
+   {if isset($ariaLabel)}aria-label="{$ariaLabel}"{/if}
+   {if isset($dataAction)}data-action="{$dataAction}"{/if}
+   {if $disabled}aria-disabled="true"{/if}>{$text}</a>
+{else}
+<button class="btn btn-{$variant} btn-{$size}"
+   {if isset($ariaLabel)}aria-label="{$ariaLabel}"{/if}
+   {if isset($dataAction)}data-action="{$dataAction}"{/if}
+   {if $disabled}disabled{/if}>{$text}</button>
+{/if}

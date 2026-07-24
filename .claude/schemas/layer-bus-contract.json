@@ -1,0 +1,54 @@
+{
+  "interface": "layer-bus-contract",
+  "version": "1.0",
+  "description": "层间总线通信契约 — 各层只通过事件总线通信，禁止直接require跨层模块",
+  "bus": "core/event-store.js",
+  "layers": {
+    "L1_perceive": {
+      "dir": "perceive/",
+      "publishes": ["need_collected", "radar_scan_complete"],
+      "subscribes": ["trace_created"],
+      "upstream_of": ["L2_decide", "L3_execute", "L4_feedback", "L5_evolve"]
+    },
+    "L2_decide": {
+      "dir": "decide/",
+      "publishes": ["need_scored", "need_decided", "decision_audited", "genesis_prd_generated"],
+      "subscribes": ["need_collected", "genesis_started"],
+      "upstream_of": ["L3_execute", "L4_feedback", "L5_evolve"]
+    },
+    "L3_execute": {
+      "dir": "execute/",
+      "publishes": ["need_executed", "ci_submitted", "ci_running", "ci_completed", "ci_failed", "genesis_started", "genesis_code_generated", "genesis_quality_passed", "genesis_deployed", "genesis_failed"],
+      "subscribes": ["need_decided", "genesis_prd_generated"],
+      "upstream_of": ["L4_feedback", "L5_evolve"]
+    },
+    "L4_feedback": {
+      "dir": "feedback/",
+      "publishes": ["runner_registered", "runner_heartbeat", "runner_offline", "human_override"],
+      "subscribes": ["ci_completed", "ci_failed", "genesis_deployed", "genesis_failed", "need_executed"],
+      "upstream_of": ["L5_evolve"]
+    },
+    "L5_evolve": {
+      "dir": "evolve/",
+      "publishes": ["pattern_discovered", "weight_adjusted"],
+      "subscribes": ["ci_completed", "ci_failed", "genesis_failed", "runner_offline", "human_override", "decision_audited"],
+      "upstream_of": []
+    }
+  },
+  "shared": {
+    "dir": "core/",
+    "description": "共享层 — 任何层可依赖，不视为跨层",
+    "modules": ["db", "event-store", "persistence", "logger", "causal-trace"]
+  },
+  "rules": {
+    "cross_layer_require": "禁止 — 使用 event-store.append() + 上层订阅",
+    "shared_layer_require": "允许 — core/ 目录下的模块任何层可require",
+    "event_schema": "每个事件类型必须在 EVENT_TYPES 中注册",
+    "direction": "上游层publish → 下游层subscribe，禁止反向"
+  },
+  "communication_pattern": {
+    "correct": "L3订阅L2发布的genesis_prd_generated事件 → L3处理 → L3发布genesis_code_generated",
+    "incorrect": "L3直接require('../decide/intelligence')调用L2函数",
+    "migration_path": "直接require → 改为订阅事件 + 防御性fallback → 纯事件驱动"
+  }
+}

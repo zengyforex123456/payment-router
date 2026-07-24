@@ -1,0 +1,21 @@
+#!/bin/sh
+# Converge Pre-commit Hook — unified enforcement gate
+# Install: git config core.hooksPath .githooks
+set -e
+
+echo "Converge Pre-commit..."
+
+# Auto-update classmap if new PHP files in modules/
+if git diff --cached --name-only --diff-filter=A | grep -q '^modules/.*\.php$'; then
+    echo "  ↳ New module files detected → updating classmap..."
+    php scripts/gen-classmap.php --write > /dev/null 2>&1 || true
+    git add composer.json
+fi
+
+php bin/platform enforce || exit 1
+
+# Auto-sync registries
+php bin/tool sync > /dev/null 2>&1 || true
+php bin/tool run discover-capabilities > /dev/null 2>&1 || true
+
+echo "OK: Pre-commit passed ($(date +%H:%M:%S))"

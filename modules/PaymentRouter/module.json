@@ -1,0 +1,16 @@
+{
+    "name": "PaymentRouter",
+    "version": "0.1.0",
+    "description": "AB 轮询支付路由 — 核心中控引擎。接收 A 站订单、按策略选择 B 站、路由支付、Webhook 回调。",
+    "depends_on": ["Tenant"],
+    "provides": [
+        "payment-router.dispatch",
+        "payment-router.webhook",
+        "payment-router.dashboard"
+    ],
+    "hooks": [
+        "ui.dock.panels",
+        "router.register",
+        "cron.payment-router.health-check"
+    ]
+}

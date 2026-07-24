@@ -1,0 +1,1 @@
+{"name":"Divider","category":"content","props":{"label":{"type":"string","default":"","label":"分隔文字","optional":true}},"tokens":["--border"],"status":"stable"}

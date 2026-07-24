@@ -1,0 +1,36 @@
+{* molecules/wizard-steps.latte — 向导步骤指示器
+   @param  int $currentStep  当前步骤 (1-5)
+   @param  array $steps      步骤定义 [{label, icon}] *}
+{var $steps = $steps ?? [
+    ['icon' => '📝', 'label' => $zh ? '基本信息' : 'Basic Info'],
+    ['icon' => '🔗', 'label' => $zh ? '追踪配置' : 'Tracking'],
+    ['icon' => '🎯', 'label' => $zh ? 'Offer & LP' : 'Offer & LP'],
+    ['icon' => '✅', 'label' => $zh ? '预览确认' : 'Review'],
+    ['icon' => '🚀', 'label' => $zh ? '上线' : 'Launch'],
+]}
+
+<div class="wizard-steps" style="display:flex;align-items:center;justify-content:center;padding:var(--space-4) 0;margin-bottom:var(--space-6)"
+     data-wizard-target="steps">
+  {foreach $steps as $i => $s}
+    {var $idx = $i + 1}
+    {var $isActive = $idx == $currentStep}
+    {var $isDone = $idx < $currentStep}
+    <div style="display:flex;align-items:center;gap:var(--space-2);{if $isActive}color:var(--accent);font-weight:600{elseif $isDone}color:var(--content-success){else}color:var(--content-tertiary){/if}">
+      <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:var(--text-sm);
+        {if $isActive}background:var(--accent);color:#fff
+        {elseif $isDone}background:var(--content-success);color:#fff
+        {else}background:var(--surface-overlay);border:2px solid var(--border-default){/if}">
+        {if $isDone}✓{else}{$s['icon']}{/if}
+      </span>
+      <span style="font-size:var(--text-sm);white-space:nowrap;{if !$isActive && !$isDone}opacity:0.5{/if}">{$s['label']}</span>
+    </div>
+    {if $idx < 5}
+      <span style="flex:1;height:2px;min-width:24px;margin:0 var(--space-2);
+        {if $idx < $currentStep}background:var(--content-success)
+        {elseif $idx == $currentStep}background:var(--accent)
+        {else}background:var(--border-default){/if}"></span>
+    {/if}
+  {/foreach}
+</div>
+
+<!-- L3:OK wizard-steps -->

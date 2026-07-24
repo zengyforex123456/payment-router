@@ -1,0 +1,1 @@
+{"name":"Stack","category":"layout","props":{"gap":{"type":"enum","values":["sm","md","lg","xl"],"default":"md","label":"间距"},"align":{"type":"enum","values":["left","center","right","stretch"],"default":"stretch","label":"水平对齐"}},"tokens":["--space-sm","--space-md","--space-lg","--space-xl"],"status":"stable"}

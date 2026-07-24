@@ -1,0 +1,38 @@
+# .gitattributes — 行尾规范 (Phase 0 根治 Windows CRLF↔LF churn)
+#
+# 背景: 无此文件 + core.autocrlf=false 时, Windows 上某工具翻行尾会让 git 把
+# 全树几百个文件都标成 modified(纯 EOL 噪声, 零内容改动)。统一 LF 根治。
+# 注意: 本文件只规范"今后"的行尾; 存量不会被追溯 churn(未跑 --renormalize)。
+
+# 默认: 文本文件统一 LF, 二进制自动识别
+* text=auto eol=lf
+
+# 源码显式 LF
+*.php   text eol=lf
+*.js    text eol=lf
+*.cjs   text eol=lf
+*.mjs   text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.sql   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.sh    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.svg   text eol=lf
+
+# 二进制: 绝不做行尾转换
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.mmdb  binary
+*.gz    binary
+*.zip   binary

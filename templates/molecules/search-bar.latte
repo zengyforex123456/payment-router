@@ -1,0 +1,12 @@
+{* L2 分子: SearchBar — 搜索框 (带清除按钮 + 防抖) *}
+{var $placeholder = $placeholder ?? '搜索...'}
+{var $controller = $controller ?? 'list-crud'}
+{var $target = $target ?? 'keyword'}
+<div class="crud-search">
+  <span class="crud-search-icon">🔍</span>
+  <input type="text" class="crud-search-input" placeholder="{$placeholder}"
+         data-{$controller}-target="{$target}"
+         data-action="input->{$controller}#search" autocomplete="off">
+  <button class="crud-search-clear" data-{$controller}-target="clearBtn"
+          data-action="click->{$controller}#clearSearch" style="display:none">✕</button>
+</div>

@@ -1,0 +1,136 @@
+{* ═══════════════════════════════════════════
+   molecules/kpi-card — KPI 指标卡片 (暗黑赛博)
+
+   参数:
+     $title   — 指标名称, 如 "总点击"
+     $value   — 指标值, 如 "12,345"
+     $change  — 变化百分比 (可选), 如 "+12.5%" 或 "-3.2%"
+     $trend   — 'up' (涨, 绿色) | 'down' (跌, 红色) | 'flat' (持平, 灰色)
+     $icon    — emoji 图标 (可选), 如 "👆"
+     $subtitle — 副标题 (可选), 如 "vs 上周"
+
+   用法:
+     {include '../molecules/kpi-card.latte',
+        title => '总点击', value => '12,345',
+        change => '+12.5%', trend => 'up', icon => '👆'}
+   ═══════════════════════════════════════════ *}
+
+{* ── 默认值 ── *}
+{var $trend = $trend ?? 'flat'}
+{var $icon = $icon ?? null}
+
+{* ── 趋势颜色映射 ── *}
+{var $trendColor = match ($trend) {
+    'up'   => 'var(--success)',
+    'down' => 'var(--danger)',
+    default => 'var(--text-tertiary)'
+}}
+
+{* ── 趋势箭头 ── *}
+{var $trendArrow = match ($trend) {
+    'up'   => '↑',
+    'down' => '↓',
+    default => '→'
+}}
+
+<div class="kpi-card">
+  {* 顶部: 图标 + 标题 *}
+  <div class="kpi-header">
+    {if $icon}
+    <span class="kpi-icon">{$icon }</span>
+    {/if}
+    <span class="kpi-title">{$title }</span>
+  </div>
+
+  {* 中部: 核心数值 *}
+  <div class="kpi-body">
+    <data class="kpi-value">{$value }</data>
+
+    {if isset($change)}
+    <span class="kpi-change" style="color: {$trendColor }">
+      <span class="kpi-arrow">{$trendArrow }</span>
+      {$change }
+    </span>
+    {/if}
+  </div>
+
+  {* 底部: 副标题 (可选) *}
+  {if isset($subtitle)}
+  <div class="kpi-footer">
+    <span class="kpi-subtitle">{$subtitle }</span>
+  </div>
+  {/if}
+</div>
+
+{* ═══ 内联样式 ═══ *}
+{syntax off}
+<style>
+/* ── KPI Card ── */
+.kpi-card {
+  display: flex; flex-direction: column; gap: var(--space-2, 8px);
+  padding: var(--space-5, 20px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg, 12px);
+  transition: all var(--motion-fast);
+  position: relative; overflow: hidden;
+}
+
+/* 悬停微升 + 发光边框 */
+.kpi-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* 顶部发光条 — 仅当有 trend 时显示 */
+.kpi-card:has(.kpi-change)::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 60%; height: 2px; border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+  opacity: 0.6; transition: opacity var(--motion-fast);
+}
+.kpi-card:has(.kpi-change):hover::before { opacity: 1; }
+
+/* ── 顶部: 标题行 ── */
+.kpi-header {
+  display: flex; align-items: center; gap: var(--space-2, 8px);
+}
+.kpi-icon { font-size: 18px; line-height: 1; }
+.kpi-title {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* ── 中部: 数值行 ── */
+.kpi-body {
+  display: flex; align-items: baseline; gap: var(--space-3, 12px);
+  flex-wrap: wrap;
+}
+.kpi-value {
+  font-size: var(--text-3xl, 1.875rem);
+  font-weight: 700; color: var(--text-primary);
+  line-height: 1.2; font-variant-numeric: tabular-nums;
+}
+.kpi-change {
+  font-size: var(--text-sm, 0.875rem); font-weight: 600;
+  display: flex; align-items: center; gap: 2px;
+}
+.kpi-arrow { font-size: var(--text-xs, 0.75rem); }
+
+/* ── 底部: 副标题 ── */
+.kpi-footer { margin-top: auto; }
+.kpi-subtitle {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-tertiary);
+}
+
+/* ── 响应式: 小屏文字缩小 ── */
+@media (max-width: 640px) {
+  .kpi-card { padding: var(--space-4, 16px); }
+  .kpi-value { font-size: var(--text-2xl, 1.5rem); }
+}
+</style>
+{/syntax}

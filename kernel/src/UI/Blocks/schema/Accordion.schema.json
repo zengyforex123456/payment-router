@@ -1,0 +1,1 @@
+{"name":"Accordion","category":"content","props":{"items":{"type":"array","default":[{"title":"Section 1","content":"Content 1"},{"title":"Section 2","content":"Content 2"}],"label":"Items"}},"tokens":["--content-primary","--content-secondary","--content-tertiary","--surface-overlay"],"status":"stable"}

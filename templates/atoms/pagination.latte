@@ -1,0 +1,12 @@
+{* L1 原子: Pagination — 分页控件 *}
+{var $page = ($data['page'] ?? 1)}
+{var $total = ($data['totalPages'] ?? 1)}
+{var $baseUrl = ($data['baseUrl'] ?? '?page=')}
+
+<nav class="pagination" aria-label="分页导航">
+  <a href="{$baseUrl}{max(1, $page-1)}" class="pagination-btn {if $page <= 1}disabled{/if}"
+     {if $page <= 1}aria-disabled="true"{/if}>← 上一页</a>
+  <span class="pagination-info">{$page} / {$total}</span>
+  <a href="{$baseUrl}{min($total, $page+1)}" class="pagination-btn {if $page >= $total}disabled{/if}"
+     {if $page >= $total}aria-disabled="true"{/if}>下一页 →</a>
+</nav>

@@ -1,0 +1,21 @@
+{
+    "_version": "1.0",
+    "menus": {
+        "main": {
+            "label_en": "Main",
+            "label_zh": "主菜单",
+            "label_icon": "home",
+            "roles": ["admin"],
+            "items": [
+                {
+                    "id": "dashboard",
+                    "label_zh": "仪表盘",
+                    "label_en": "Dashboard",
+                    "icon": "📊",
+                    "url": "/admin-panel.php",
+                    "shortcut": "G D"
+                }
+            ]
+        }
+    }
+}

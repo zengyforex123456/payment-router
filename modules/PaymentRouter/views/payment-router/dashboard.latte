@@ -1,0 +1,56 @@
+{layout 'templates/_layouts/dashboard.latte'}
+{block title}{__('nav.router_dashboard')}{/block}
+
+{block content}
+<div data-controller="payment-router-dashboard"
+     data-payment-router-dashboard-target="container">
+
+  {* 汇总卡片 *}
+  <div class="grid grid--4col" style="gap: var(--space-md); margin-bottom: var(--space-lg);">
+    <div class="card card--stat">
+      <span class="card__label">{__('dashboard.total_orders')}</span>
+      <span class="card__value" data-payment-router-dashboard-target="totalOrders">—</span>
+    </div>
+    <div class="card card--stat">
+      <span class="card__label">{__('dashboard.success_rate')}</span>
+      <span class="card__value" data-payment-router-dashboard-target="successRate">—</span>
+    </div>
+    <div class="card card--stat">
+      <span class="card__label">{__('dashboard.total_revenue')}</span>
+      <span class="card__value" data-payment-router-dashboard-target="totalRevenue">—</span>
+    </div>
+    <div class="card card--stat">
+      <span class="card__label">{__('dashboard.pending_orders')}</span>
+      <span class="card__value" data-payment-router-dashboard-target="pendingOrders">—</span>
+    </div>
+  </div>
+
+  {* loading/error/empty 三态 *}
+  <div data-payment-router-dashboard-target="loading" class="spinner">{__('common.loading')}</div>
+  <div data-payment-router-dashboard-target="error" class="alert alert--error" style="display:none;"></div>
+  <div data-payment-router-dashboard-target="empty" class="empty-state" style="display:none;">{__('dashboard.no_data')}</div>
+
+  {* B 站明细表 *}
+  <div data-payment-router-dashboard-target="content" class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{__('dashboard.b_site')}</th>
+          <th>{__('dashboard.gateway')}</th>
+          <th>{__('dashboard.status')}</th>
+          <th>{__('dashboard.24h_orders')}</th>
+          <th>{__('dashboard.success')}</th>
+          <th>{__('dashboard.failed')}</th>
+        </tr>
+      </thead>
+      <tbody data-payment-router-dashboard-target="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+{syntax off}<script type="module">
+import DashboardController from "./controllers/payment_router_dashboard_controller.js";
+window.Stimulus.register("payment-router-dashboard", DashboardController);
+</script>{/syntax}
+{/block}
+<!-- L3:OK dashboard -->

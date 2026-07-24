@@ -1,0 +1,50 @@
+/* ═══════════════════════════════════════════
+   Converge Grid System v2 — 三种模式，零溢出
+   设计: 不写媒体查询，用 auto-fit + minmax() 自动响应
+   防溢出: minmax(0,1fr) + min-width:0 + contain 三重保护
+   ═══════════════════════════════════════════ */
+
+/* ── 模式1: 固定 N 列 ── */
+.grid-cols-1 { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--grid-gap, var(--space-4)); }
+.grid-cols-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--grid-gap, var(--space-4)); }
+.grid-cols-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--grid-gap, var(--space-4)); }
+.grid-cols-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--grid-gap, var(--space-4)); }
+.grid-cols-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--grid-gap, var(--space-4)); }
+.grid-cols-6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--grid-gap, var(--space-4)); }
+
+/* ── 模式2: auto-fit 自适应列 ── */
+/* 自动计算列数: 容器宽 / (最小列宽 + gap), 无需媒体查询! */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--grid-min, 240px), 1fr));
+  gap: var(--grid-gap, var(--space-4));
+}
+
+/* ── 模式3: 侧边栏+内容 ── */
+.grid-sidebar {
+  display: grid;
+  grid-template-columns: minmax(0, var(--grid-sidebar, 1fr)) minmax(0, 2fr);
+  gap: var(--grid-gap, var(--space-4));
+  align-items: start;
+}
+
+/* ── 溢出三重保护 (所有网格子项自动继承) ── */
+.grid-cols-1 > *,
+.grid-cols-2 > *,
+.grid-cols-3 > *,
+.grid-cols-4 > *,
+.grid-cols-5 > *,
+.grid-cols-6 > *,
+.grid-auto  > *,
+.grid-sidebar > * {
+  min-width: 0;
+}
+
+/* ── 响应式降级 (仅2处断点, 轻量) ── */
+@media (max-width: 768px) {
+  .grid-cols-4, .grid-cols-5, .grid-cols-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-sidebar { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .grid-cols-2, .grid-cols-3, .grid-cols-4, .grid-cols-5, .grid-cols-6 { grid-template-columns: minmax(0, 1fr); }
+}

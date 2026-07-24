@@ -1,0 +1,106 @@
+/* ═══════════════════════════════════════════
+   Precision Common — 共享 UI 组件样式
+   来源: precision-analysis / funnel / tracking
+   加载: 所有 Precision 页面共用此文件
+   ═══════════════════════════════════════════ */
+
+/* ── Buttons ── */
+.btn-pill {
+  display: inline-flex; align-items: center; gap: var(--space-2, 8px);
+  padding: 12px 24px; border-radius: var(--radius-full, 9999px);
+  font-size: var(--text-sm); font-weight: 500;
+  cursor: pointer; border: none;
+  transition: transform var(--motion-fast), box-shadow var(--motion-fast);
+}
+.btn-pill:active { transform: scale(0.95); }
+.btn-pill-primary { background: var(--accent); color: #fff; }
+.btn-pill-primary:hover { box-shadow: 0 2px 12px var(--accent-glow); }
+.btn-pill-secondary { background: var(--bg-overlay); color: var(--text-primary); border: 1px solid var(--border-default); }
+.btn-pill-secondary:hover { background: var(--bg-base); }
+.btn-sm { padding: 6px 16px; font-size: var(--text-xs); }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm, 4px); background: var(--bg-overlay);
+  color: var(--text-primary); font-size: var(--text-sm); cursor: pointer;
+  transition: background var(--motion-fast);
+}
+.btn-secondary:hover { background: var(--bg-base); }
+
+.btn-icon {
+  width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-default); border-radius: var(--radius-md, 8px);
+  background: var(--bg-raised); cursor: pointer; color: var(--text-tertiary);
+}
+.btn-icon:hover { color: var(--text-primary); }
+
+/* ── Cards & Panels ── */
+.analysis-card {
+  background: var(--bg-raised); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg, 16px); padding: var(--space-5, 24px);
+}
+.card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: var(--space-4, 16px);
+}
+.card-header h2 { font-size: var(--text-lg); font-weight: 600; color: var(--text-primary); margin: 0; }
+
+/* ── Tables ── */
+.precision-table-wrap { overflow-x: auto; }
+.precision-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.precision-table thead { border-bottom: 1px solid var(--border-default); }
+.precision-table th {
+  padding: 10px 16px; text-align: left; font-size: var(--text-xs); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); white-space: nowrap;
+}
+.precision-table td { padding: 10px 16px; border-bottom: 1px solid var(--border-default); vertical-align: middle; }
+.precision-table tbody tr:hover { background: var(--bg-overlay); }
+.precision-table tbody tr:last-child td { border-bottom: none; }
+.font-semibold { font-weight: 600; color: var(--text-primary); }
+
+/* ── Status & ROI ── */
+.status-badge { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600; }
+.status-active  { background: var(--success-soft); color: var(--success); }
+.status-paused  { background: var(--warning-soft); color: var(--warning); }
+.status-draft   { background: var(--bg-overlay); color: var(--text-tertiary); }
+.roi-up   { color: var(--success); font-weight: 600; }
+.roi-down { color: var(--danger); font-weight: 600; }
+.roi-flat { color: var(--text-tertiary); }
+
+/* ── Filter Controls ── */
+.filter-select {
+  padding: 6px 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md, 8px);
+  font-size: var(--text-sm); background: var(--bg-raised); color: var(--text-primary); cursor: pointer;
+}
+.filter-select:focus { border-color: var(--accent); outline: none; }
+.filter-input {
+  padding: 8px 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md, 8px);
+  font-size: var(--text-sm); background: var(--bg-raised); color: var(--text-primary);
+}
+.filter-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* ── State Overlays (loading / error / empty) ── */
+.state-overlay {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: var(--space-12, 48px); text-align: center; color: var(--text-secondary);
+}
+.spinner {
+  width: 32px; height: 32px; border: 3px solid var(--border-default);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: precision-spin 0.8s linear infinite; margin-bottom: var(--space-4);
+}
+@keyframes precision-spin { to { transform: rotate(360deg); } }
+.error-message { color: var(--danger); font-weight: 600; }
+
+/* ── Anomaly Tags ── */
+.anomaly-tag {
+  font-size: var(--text-xs); font-weight: 600; padding: 2px 8px; border-radius: var(--radius-full);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.anomaly-tag.warning { background: var(--warning-soft); color: var(--warning); }
+.anomaly-tag.error   { background: var(--danger-soft); color: var(--danger); }
+
+/* ── Animations ── */
+@keyframes precision-draw-line { to { stroke-dashoffset: 0; } }
+.sparkline-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: precision-draw-line 2s ease forwards; }

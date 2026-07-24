@@ -1,0 +1,59 @@
+# ═══ PaymentRouter + MySQL 开发环境 ═══
+# 启动: docker compose -f docker-compose.payment-router.yml up -d
+# 日志: docker compose -f docker-compose.payment-router.yml logs -f
+# 停止: docker compose -f docker-compose.payment-router.yml down
+
+name: payment-router
+
+services:
+  # ── MySQL 8.0 ──
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret_change_me}
+      MYSQL_DATABASE: ${DB_NAME:-payment_router}
+      MYSQL_USER: ${DB_USER:-payment_router}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-payment_router_secret}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_secret_change_me}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── PaymentRouter API ──
+  api:
+    build:
+      context: .
+      dockerfile: docker/payment-router/Dockerfile
+    image: payment-router:local
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_SECRET: ${APP_SECRET:-change-me-to-a-random-string}
+      APP_PORT: "8080"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-payment_router}
+      DB_USER: ${DB_USER:-payment_router}
+      DB_PASSWORD: ${DB_PASSWORD:-payment_router_secret}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  mysql_data:

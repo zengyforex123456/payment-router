@@ -1,0 +1,270 @@
+{* ═══════════════════════════════════════════════════════
+   _partials/toolbar-extras.latte — 三合一工具扩展
+
+   包含:
+     1. 移动端底部 TabBar (CSS 媒体查询, ≤768px 显示)
+     2. 导出下拉 (Stimulus dropdown_controller)
+     3. 帮助引导浮层 (Stimulus onboarding_controller)
+
+   用法: 在 </body> 前 {include '_partials/toolbar-extras.latte'}
+   数据: 由父模板传入 $menuItems (侧边栏菜单, 用于移动端 Tab)
+
+   L3 自证: L3:OK toolbar-extras
+   ═══════════════════════════════════════════════════════ *}
+
+{var $menuItems = $menuItems ?? []}
+
+{* ═══════════════════════════════════════════════════════
+   1. 移动端底部 TabBar (≤768px, CSS 控制显隐)
+   ═══════════════════════════════════════════════════════ *}
+<nav class="mobile-bar">
+  {foreach array_slice($menuItems, 0, 4) as $item}
+  <a href="{$item['url'] }" class="mobile-tab {if $item['active'] ?? false}active{/if}">
+    <span class="mobile-tab-icon">{$item['icon'] }</span>
+    <span class="mobile-tab-label">{$item['label'] }</span>
+  </a>
+  {/foreach}
+
+  {* 更多: 导出 + 帮助 → dropdown *}
+  <div data-controller="dropdown" data-dropdown-close-outside-value="true" style="position:relative">
+    <button class="mobile-tab" data-action="click->dropdown#toggle">
+      <span class="mobile-tab-icon">⋯</span>
+      <span class="mobile-tab-label">更多</span>
+    </button>
+    <div class="mobile-more-menu" data-dropdown-target="panel" style="display:none">
+      <button class="mobile-more-item" data-action="click->dropdown#close" onclick="window.exportData('pdf')">📄 导出 PDF</button>
+      <button class="mobile-more-item" data-action="click->dropdown#close" onclick="window.exportData('excel')">📊 导出 Excel</button>
+      <button class="mobile-more-item" data-action="click->dropdown#close" onclick="window.exportData('csv')">📋 导出 CSV</button>
+      <button class="mobile-more-item" data-action="click->dropdown#close" onclick="window.startOnboarding()">💡 使用引导</button>
+      <a href="/?page=settings" class="mobile-more-item">⚙️ 设置</a>
+    </div>
+  </div>
+</nav>
+
+{* ═══════════════════════════════════════════════════════
+   2. 一键导出 (桌面端 → 仅在 ≥768px 显示)
+   ═══════════════════════════════════════════════════════ *}
+<div class="export-dropdown-wrap" data-controller="dropdown" data-dropdown-close-outside-value="true">
+  <button class="rp-btn" data-action="click->dropdown#toggle" title="导出数据">⬇ 导出</button>
+  <div class="rp-dropdown right" data-dropdown-target="panel" style="display:none">
+    <button class="topbar-dropdown-item" data-action="click->dropdown#close" onclick="window.exportData('pdf')">
+      <span class="export-icon">📄</span> 导出 PDF <span class="export-hint">· 图表+表格</span>
+    </button>
+    <button class="topbar-dropdown-item" data-action="click->dropdown#close" onclick="window.exportData('excel')">
+      <span class="export-icon">📊</span> 导出 Excel <span class="export-hint">· .xlsx</span>
+    </button>
+    <button class="topbar-dropdown-item" data-action="click->dropdown#close" onclick="window.exportData('csv')">
+      <span class="export-icon">📋</span> 导出 CSV <span class="export-hint">· 原始数据</span>
+    </button>
+  </div>
+</div>
+
+{* ═══════════════════════════════════════════════════════
+   3. 帮助引导浮层 (Onboarding Tour → Stimulus onboarding_controller)
+   ═══════════════════════════════════════════════════════ *}
+<div class="help-trigger" onclick="window.startOnboarding()" title="使用引导 — 了解核心功能">
+  <span>💡</span>
+  <span class="help-label">使用引导</span>
+</div>
+
+<div class="onboarding-overlay" data-controller="onboarding" data-onboarding-target="overlay" style="display:none"
+     data-action="keydown.escape@window->onboarding#close">
+  <div class="onboarding-backdrop" data-action="click->onboarding#close"></div>
+  <div class="onboarding-bubble">
+    <div class="onboarding-steps" data-onboarding-target="steps">
+      <span class="onboarding-dot" data-onboarding-target="dot"></span>
+    </div>
+    <div class="onboarding-body">
+      <span class="onboarding-emoji" data-onboarding-target="icon"></span>
+      <h3 class="onboarding-title" data-onboarding-target="title"></h3>
+      <p class="onboarding-desc" data-onboarding-target="desc"></p>
+      <p class="onboarding-counter" data-onboarding-target="counter"></p>
+    </div>
+    <div class="onboarding-actions">
+      <button class="rp-btn" data-onboarding-target="skipBtn" data-action="click->onboarding#close">跳过</button>
+      <button class="rp-btn" data-onboarding-target="prevBtn" data-action="click->onboarding#prev">← 上一步</button>
+      <button class="rp-btn rp-btn-primary" data-onboarding-target="nextBtn" data-action="click->onboarding#next">下一步 →</button>
+    </div>
+  </div>
+</div>
+
+{* ═══ 全局函数: 导出 + 引导 ═══ *}
+{syntax off}
+<script>
+(function() {
+    var toastTimer = null;
+
+    function showToast(msg) {
+        var el = document.querySelector('.toast-msg') || (function() {
+            var t = document.createElement('div');
+            t.className = 'toast-msg';
+            t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 24px;background:#1a2536;color:#00f0a8;border:1px solid #00f0a8;border-radius:100px;font-size:14px;font-weight:500;box-shadow:0 0 24px rgba(0,240,168,0.2);white-space:nowrap';
+            document.body.appendChild(t);
+            return t;
+        })();
+        el.textContent = msg;
+        el.style.display = '';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { el.style.display = 'none'; }, 3000);
+    }
+
+    window.exportData = function(format) {
+        var title = document.title || 'Converge';
+        var ts = new Date().toISOString().slice(0, 10);
+
+        if (format === 'csv') {
+            var table = document.querySelector('table.rp-tbl, table.cp-table, table.data-table');
+            if (table) {
+                var rows = [];
+                table.querySelectorAll('tr').forEach(function(tr) {
+                    var cells = [];
+                    tr.querySelectorAll('th, td').forEach(function(td) {
+                        cells.push('"' + (td.textContent || '').trim().replace(/"/g, '""') + '"');
+                    });
+                    if (cells.length) rows.push(cells.join(','));
+                });
+                if (rows.length) {
+                    var blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = title + '-' + ts + '.csv';
+                    a.click(); URL.revokeObjectURL(url);
+                }
+            }
+        }
+
+        if (format === 'pdf') window.open('/api/export/pdf?t=' + ts, '_blank');
+        if (format === 'excel') window.open('/api/export/excel?t=' + ts, '_blank');
+
+        showToast('✅ ' + format.toUpperCase() + ' 导出已开始');
+    };
+
+    window.startOnboarding = function() {
+        var ctrl = document.querySelector('[data-controller="onboarding"]');
+        if (ctrl && ctrl.__stController) {
+            ctrl.__stController.open();
+        } else {
+            showToast('引导组件未加载, 请刷新页面');
+        }
+    };
+})();
+</script>
+{/syntax}
+
+{* ═══ 样式 ═══ *}
+{syntax off}
+<style>
+/* ── 移动端底部 TabBar (CSS 显隐, 替换 x-show) ── */
+.mobile-bar {
+  display: none;  /* 桌面端隐藏 */
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+  justify-content: space-around; align-items: center;
+  height: 56px; padding: 0 4px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding-bottom: env(safe-area-inset-bottom, 4px);
+}
+@media (max-width: 767px) {
+  .mobile-bar { display: flex; }
+}
+
+.mobile-tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-width: 56px; min-height: 44px; padding: 4px 8px;
+  border: none; background: transparent; color: var(--text-tertiary);
+  font-size: 10px; font-weight: 500; text-decoration: none;
+  cursor: pointer; transition: color 0.12s; font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-tab.active, .mobile-tab:active { color: var(--color-accent); }
+.mobile-tab-icon { font-size: 20px; line-height: 1; }
+.mobile-tab-label { line-height: 1.2; }
+
+.mobile-more-menu {
+  position: fixed; bottom: 64px; right: 12px; z-index: 600;
+  min-width: 160px; padding: 4px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+}
+.mobile-more-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 10px 14px; border: none;
+  border-radius: 8px; background: transparent;
+  color: var(--text-secondary); font-size: 14px;
+  cursor: pointer; transition: all 0.12s;
+  font-family: inherit; text-decoration: none;
+}
+.mobile-more-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+
+@media (max-width: 767px) {
+  .app-content, .main-content, main { padding-bottom: 72px !important; }
+  .rp-root, .dashboard-root, .campaigns-page { padding-bottom: 72px !important; }
+  .rp-kpis, .db-kpi-row, .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .rp-tbl-w table, .cp-table-wrapper table { font-size: 0.75rem !important; }
+  .rp-th, .cp-th { font-size: 0.625rem !important; padding: 8px 10px !important; }
+  .rp-td, .cp-td { padding: 8px 10px !important; }
+}
+
+/* ── 导出下拉 (桌面端, CSS 显隐) ── */
+.export-dropdown-wrap { position: relative; }
+@media (max-width: 767px) {
+  .export-dropdown-wrap { display: none; }
+}
+.export-icon { font-size: 16px; }
+.export-hint { font-size: 0.625rem; color: var(--text-tertiary); margin-left: auto; }
+
+/* ── 帮助引导 ── */
+.help-trigger {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; margin: 8px 12px;
+  border-radius: 8px; cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 0.75rem; transition: all 0.15s;
+  border: 1px dashed var(--color-border);
+}
+.help-trigger:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.help-label { font-weight: 500; white-space: nowrap; }
+
+.onboarding-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+}
+.onboarding-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(8, 11, 18, 0.85);
+  backdrop-filter: blur(4px);
+}
+.onboarding-bubble {
+  position: relative; z-index: 1;
+  width: 380px; max-width: calc(100vw - 32px);
+  padding: 28px 24px 20px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 16px;
+  box-shadow: 0 0 60px rgba(0, 240, 168, 0.08), 0 12px 40px rgba(0,0,0,0.8);
+  text-align: center;
+}
+.onboarding-steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
+.onboarding-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-border); transition: all 0.2s;
+}
+.onboarding-dot.active { background: var(--color-accent); box-shadow: 0 0 8px rgba(0,240,168,0.4); transform: scale(1.3); }
+.onboarding-dot.done { background: var(--color-accent-soft); }
+.onboarding-body { margin-bottom: 20px; }
+.onboarding-emoji { font-size: 40px; display: block; margin-bottom: 12px; }
+.onboarding-title { font-size: 1.125rem; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; }
+.onboarding-desc { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+.onboarding-counter { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px; }
+.onboarding-actions { display: flex; justify-content: center; gap: 12px; }
+</style>
+{/syntax}
+
+<!-- L3:OK toolbar-extras -->

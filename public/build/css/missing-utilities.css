@@ -1,0 +1,87 @@
+/* ═══════════════════════════════════════════
+   Missing Tailwind Utilities
+   Tailwind safelist does not support:
+     - arbitrary values ([.1em])
+     - opacity modifiers (/5, /25)
+     - custom utilities (cta-glow)
+   These are directly provided as CSS.
+   ═══════════════════════════════════════════ */
+
+/* ── Responsive padding ── */
+@media (min-width: 1024px) {
+  .lg\:py-32 { padding-top: 8rem; padding-bottom: 8rem; }
+  .lg\:py-24 { padding-top: 6rem; padding-bottom: 6rem; }
+  .lg\:text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+  .lg\:text-6xl { font-size: 3.75rem; line-height: 1; }
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 640px) {
+  .sm\:text-5xl { font-size: 3rem; line-height: 1; }
+  .sm\:inline { display: inline; }
+  .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 768px) {
+  .md\:gap-10 { gap: 2.5rem; }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ── Gradient stops with opacity ── */
+.from-accent\/5 {
+  --tw-gradient-from: color-mix(in srgb, var(--accent) 5%, transparent) var(--tw-gradient-from-position);
+  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+/* ── Shadow with opacity ── */
+.shadow-accent\/25 { --tw-shadow-color: color-mix(in srgb, var(--accent) 25%, transparent); --tw-shadow: var(--tw-shadow-colored); }
+.shadow-accent\/10 { --tw-shadow-color: color-mix(in srgb, var(--accent) 10%, transparent); --tw-shadow: var(--tw-shadow-colored); }
+
+/* ── Text with opacity ── */
+.text-content-tertiary\/30 { color: color-mix(in srgb, var(--content-tertiary) 30%, transparent); }
+
+/* ── Arbitrary tracking ── */
+.tracking-\[\.1em\] { letter-spacing: .1em; }
+.tracking-\[\.05em\] { letter-spacing: .05em; }
+.tracking-\[-\.025em\] { letter-spacing: -.025em; }
+.tracking-\[-\.03em\] { letter-spacing: -.03em; }
+.tracking-\[-\.02em\] { letter-spacing: -.02em; }
+
+/* ── Arbitrary leading ── */
+.leading-\[1\.12\] { line-height: 1.12; }
+
+/* ── Arbitrary min-width ── */
+.min-w-\[160px\] { min-width: 160px; }
+
+/* ── Arbitrary font-size ── */
+.text-\[11px\] { font-size: 11px; }
+
+/* ── Hover states ── */
+.hover\:bg-accent-hover:hover { background-color: var(--accent-hover); }
+.hover\:bg-accent\/10:hover { background-color: color-mix(in srgb, var(--accent) 10%, transparent); }
+.hover\:bg-surface-overlay:hover { background-color: var(--surface-overlay); }
+.hover\:border-strong:hover { border-color: var(--border-strong); }
+.hover\:-translate-y-0\.5:hover { transform: translateY(-0.125rem); }
+
+/* ── Positioning ── */
+.left-1\/2 { left: 50%; }
+.-translate-x-1\/2 { transform: translateX(-50%); }
+
+/* ── Spacing ── */
+.py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+.space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));
+}
+.space-y-1\\.5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));
+}
+
+/* ── CTA glow ── */
+.cta-glow {
+  box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 30%, transparent);
+}

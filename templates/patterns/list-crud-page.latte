@@ -1,0 +1,43 @@
+{* ═══════════════════════════════════════════
+   模式 2: List+CRUD — 列表 + 搜索 + 筛选 + 模态框
+
+   覆盖页面: 广告活动·Offer·流量源·广告网络·自动规则 (70% SaaS)
+   组件树:
+     L5 Page → L4 Template (main.latte) → L3 Organism (list-crud)
+       ├── L2: search-group, filter-group, data-table
+       ├── L1: button, input, badge
+       └── 五态: loading→empty→error→data→filtered
+
+   使用示例 (PHP 控制器):
+     LatteEngine::display('patterns/list-crud-page', [
+       'crudId' => 'campaigns',
+       'title' => '广告管理',
+       'baseUrl' => '/campaigns.php',
+       'columns' => [['key'=>'id','label'=>'ID','sortable'=>true],
+                     ['key'=>'name','label'=>'名称','sortable'=>true]],
+       'items' => $campaigns,
+       'filters' => [['value'=>'all','label'=>'全部'],
+                     ['value'=>'active','label'=>'运行中']],
+       'formFields' => '<label>名称<input name="name"></label>',
+     ]);
+   ═══════════════════════════════════════════ *}
+
+{layout '../_layouts/main.latte'}
+
+{block content}
+  {* 直接嵌入 L3 生物体 — 所有 CRUD 逻辑由 list_crud_controller.js 处理 *}
+  {include '../organisms/list-crud.latte',
+    crudId: ($crudId ?? 'crud'),
+    title: ($title ?? '列表'),
+    createLabel: ($createLabel ?? '+ 新建'),
+    baseUrl: ($baseUrl ?? '#'),
+    columns: ($columns ?? []),
+    items: ($items ?? []),
+    filters: ($filters ?? []),
+    rowActions: ($rowActions ?? []),
+    emptyIcon: ($emptyIcon ?? '📋'),
+    emptyTitle: ($emptyTitle ?? '还没有数据'),
+    emptyDesc: ($emptyDesc ?? '创建第一条记录开始使用'),
+    searchPlaceholder: ($searchPlaceholder ?? '搜索...'),
+    formFields: ($formFields ?? '')}
+{/block}

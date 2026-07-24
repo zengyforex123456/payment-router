@@ -1,0 +1,46 @@
+{* molecules/command-palette.latte — Cmd+K 命令面板覆盖层
+   挂载在 _layout.latte 中, 由 command-palette Stimulus Controller 驱动 *}
+<div data-controller="command-palette"
+     data-command-palette-open-value="false">
+
+  {* Backdrop overlay (hidden by default, controller shows on Cmd+K) *}
+  <div data-command-palette-target="overlay"
+       data-action="click->command-palette#closeOnBackdrop"
+       style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.4);backdrop-filter:blur(2px)">
+
+    <div style="position:absolute;top:15%;left:50%;transform:translateX(-50%);width:90%;max-width:560px;background:var(--surface-raised);border:1px solid var(--border-default);border-radius:12px;box-shadow:var(--shadow-xl,0 16px 48px rgba(0,0,0,0.2));overflow:hidden">
+
+      {* Search input *}
+      <div style="display:flex;align-items:center;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border-subtle)">
+        <span style="font-size:1.1rem;margin-right:var(--space-2);flex-shrink:0">🔍</span>
+        <input type="text"
+               data-command-palette-target="input"
+               data-action="input->command-palette#filter keydown->command-palette#navigateList"
+               placeholder="搜索或输入命令..."
+               autocomplete="off" spellcheck="false"
+               style="flex:1;border:none;outline:none;background:transparent;font-size:var(--text-base);color:var(--content-primary);padding:0">
+        <kbd style="flex-shrink:0;padding:2px 8px;background:var(--surface-overlay);border:1px solid var(--border-default);border-radius:4px;font-size:11px;font-family:var(--font-mono,monospace);color:var(--content-tertiary)">Esc</kbd>
+      </div>
+
+      {* Results list *}
+      <div data-command-palette-target="list"
+           style="max-height:360px;overflow-y:auto;padding:var(--space-1) 0">
+      </div>
+
+      {* Empty state *}
+      <div data-command-palette-target="empty"
+           style="display:none;text-align:center;padding:var(--space-8) var(--space-4);color:var(--content-tertiary);font-size:var(--text-sm)">
+        <span style="font-size:2rem;display:block;margin-bottom:var(--space-2)">🔍</span>
+        未找到匹配结果
+      </div>
+
+      {* Footer hints *}
+      <div style="display:flex;gap:var(--space-4);padding:var(--space-2) var(--space-4);border-top:1px solid var(--border-subtle);font-size:11px;color:var(--content-tertiary)">
+        <span>↑↓ 导航</span>
+        <span>↵ 执行</span>
+        <span>Esc 关闭</span>
+        <span style="margin-left:auto">v1.0</span>
+      </div>
+    </div>
+  </div>
+</div>

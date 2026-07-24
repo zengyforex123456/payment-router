@@ -1,0 +1,22 @@
+{* atoms/grid.latte — 网格布局: 三种模式，零溢出 *}
+
+{* ── 模式1: 固定 N 列 (等宽) ── *}
+{define grid-cols $cols = 4, $gap = '4', $class = ''}
+<div class="grid-cols-{$cols}" style="--grid-gap: var(--space-{$gap})" {if $class}class="grid-cols-{$cols} {$class}"{/if}>
+{include content|noescape}
+</div>
+{/define}
+
+{* ── 模式2: auto-fit 自适应列 (不需要媒体查询!) ── *}
+{define grid-auto $min = '240px', $gap = '4', $class = ''}
+<div class="grid-auto" style="--grid-min: {$min}; --grid-gap: var(--space-{$gap})" {if $class}class="grid-auto {$class}"{/if}>
+{include content|noescape}
+</div>
+{/define}
+
+{* ── 模式3: 侧边栏+内容 (经典2列) ── *}
+{define grid-sidebar $sidebarWidth = '1fr', $gap = '4', $class = ''}
+<div class="grid-sidebar" style="--grid-sidebar: {$sidebarWidth}; --grid-gap: var(--space-{$gap})" {if $class}class="grid-sidebar {$class}"{/if}>
+{include content|noescape}
+</div>
+{/define}

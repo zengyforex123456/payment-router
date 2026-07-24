@@ -1,0 +1,70 @@
+{
+  "_description": "Converge 前端资产管理清单 — CSS/JS 文件全量注册，CI 自动验证",
+  "_updated": "2026-07-23",
+  "_rules": [
+    "新增文件必须注册到此清单",
+    "删除文件必须从此清单移除",
+    "CI: scripts/check-assets.php 验证清单与实际文件一致",
+    "所有 CSS 必须通过 <link> 加载，所有 JS 必须通过 <script> 或 import 加载"
+  ],
+  "css": {
+    "global": [
+      { "file": "design-tokens.css", "lines": 235, "desc": "唯一设计令牌源 (v5, light+dark)" },
+      { "file": "app-bundle.css", "lines": 1577, "desc": "全局样式 + skeleton + dock-layout + intent-ui + toast (多文件合并)" },
+      { "file": "app-shell.css", "lines": 248, "desc": "侧边栏 + 顶栏 + 全局布局" },
+      { "file": "dashboard-page.css", "lines": 580, "desc": "仪表盘 + 订阅 + 向导 + 表格 + 表单 (页面提取)" },
+      { "file": "grid.css", "lines": 50, "desc": "12列网格系统" },
+      { "file": "container-queries.css", "lines": 74, "desc": "容器查询 (响应式增强)" },
+      { "file": "missing-utilities.css", "lines": 87, "desc": "Tailwind 补充工具类" },
+      { "file": "tailwind.min.css", "lines": 0, "desc": "Tailwind 编译输出 (22KB)" }
+    ],
+    "page_specific": [
+      { "file": "landing.css", "lines": 142, "desc": "着陆页 v1", "loaded_by": ["_layout-head.php", "pages/landing.latte"] },
+      { "file": "landing2.css", "lines": 69, "desc": "着陆页 v2 + 2FA", "loaded_by": ["2fa-setup.php", "2fa-verify.php", "pages/landing2.latte"] },
+      { "file": "trust-badges.css", "lines": 89, "desc": "信任徽章组件", "loaded_by": ["_layout-head.php", "pages/register.latte"] },
+      { "file": "campaign-stats.css", "lines": 739, "desc": "广告活动统计页", "loaded_by": ["campaign-stats.php"] },
+      { "file": "mobile-campaign-stats.css", "lines": 320, "desc": "移动端活动统计", "loaded_by": ["campaign-stats.php"] },
+      { "file": "mobile-campaign-stats-legacy.css", "lines": 407, "desc": "旧版移动端统计", "loaded_by": ["campaign-stats-legacy.php"] }
+    ]
+  },
+  "js": {
+    "bundles": [
+      { "file": "bundle.min.js", "kB": 180, "desc": "Stimulus+Turbo+25控制器 (esbuild)", "loaded_by": ["_layout.latte", "index.latte", "_layouts/main.latte"] },
+      { "file": "stimulus-app.js", "kB": 2.5, "desc": "Stimulus 注册入口 (bundle 源文件)", "loaded_by": ["app.js import"] },
+      { "file": "app.js", "kB": 0.3, "desc": "esbuild 构建入口", "loaded_by": ["package.json build:js"] }
+    ],
+    "standalone": [
+      { "file": "htmx.min.js", "kB": 50, "desc": "HTMX (独立页面)", "loaded_by": ["_layout-head.php"] },
+      { "file": "sortable.min.js", "kB": 44, "desc": "拖拽排序", "loaded_by": ["builder.php", "pages/dashboard.latte"] },
+      { "file": "builder.js", "kB": 29, "desc": "着陆页构建器", "loaded_by": ["builder.php"] },
+      { "file": "theme-toggle.js", "kB": 1.2, "desc": "暗黑模式切换", "loaded_by": ["_layout.latte", "index.latte", "_layouts/main.latte"] }
+    ],
+    "utility": [
+      { "file": "api.js", "kB": 2.5, "desc": "API 通信层 (bundle 内)", "loaded_by": ["app.js import"] },
+      { "file": "toast.js", "kB": 1.4, "desc": "Toast 通知 (bundle 内)", "loaded_by": ["app.js import"] }
+    ],
+    "controllers": [
+      { "file": "controllers/accordion_controller.js" },
+      { "file": "controllers/campaigns_controller.js" },
+      { "file": "controllers/chart_controller.js" },
+      { "file": "controllers/clock_controller.js" },
+      { "file": "controllers/command_palette_controller.js" },
+      { "file": "controllers/conversion_toast_controller.js" },
+      { "file": "controllers/dock_controller.js" },
+      { "file": "controllers/dropdown_controller.js" },
+      { "file": "controllers/flow_controller.js" },
+      { "file": "controllers/health_controller.js" },
+      { "file": "controllers/layout_debug_controller.js" },
+      { "file": "controllers/list_crud_controller.js" },
+      { "file": "controllers/modal_controller.js" },
+      { "file": "controllers/onboarding_controller.js" },
+      { "file": "controllers/search_controller.js" },
+      { "file": "controllers/shell_controller.js" },
+      { "file": "controllers/sidebar_nav_controller.js" },
+      { "file": "controllers/table_controller.js" },
+      { "file": "controllers/tabs_controller.js" },
+      { "file": "controllers/toggle_controller.js" },
+      { "file": "controllers/wizard_controller.js" }
+    ]
+  }
+}

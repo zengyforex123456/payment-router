@@ -1,0 +1,5 @@
+{* L1 原子: TableCell — 带排序/对齐的 td *}
+<td class="crud-td {if isset($align)}crud-td-{$align}{/if} {if isset($width)}crud-td-{$width}{/if}"
+  {if isset($dataAction)}data-action="{$dataAction}"{/if}>
+  {$content|noescape}
+</td>

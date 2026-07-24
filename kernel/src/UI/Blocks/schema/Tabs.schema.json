@@ -1,0 +1,1 @@
+{"name":"Tabs","category":"layout","props":{"tabLabels":{"type":"array","default":["Tab 1","Tab 2"],"label":"Tab Labels"},"active":{"type":"number","default":0,"label":"Default Active"}},"tokens":["--content-primary","--content-secondary","--content-tertiary","--accent"],"status":"stable"}

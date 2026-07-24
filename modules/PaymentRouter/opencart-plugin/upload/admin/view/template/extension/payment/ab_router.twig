@@ -1,0 +1,115 @@
+{# AB Payment Router — Admin Settings Template (OpenCart 3.x / Twig) #}
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <h1>{{ heading_title }}</h1>
+      <ul class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    {% if error_warning %}
+    <div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}</div>
+    {% endif %}
+
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }}</h3>
+      </div>
+      <div class="panel-body">
+        <form action="{{ action }}" method="post" class="form-horizontal">
+
+          <div class="form-group required">
+            <label class="col-sm-2 control-label" for="input-controller-url">
+              <span data-toggle="tooltip" title="{{ help_controller_url }}">{{ entry_controller_url }}</span>
+            </label>
+            <div class="col-sm-10">
+              <input type="text" name="payment_ab_router_controller_url"
+                     value="{{ payment_ab_router_controller_url }}"
+                     placeholder="{{ placeholder_controller_url }}"
+                     id="input-controller-url" class="form-control" />
+              {% if error_controller_url %}
+              <div class="text-danger">{{ error_controller_url }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="form-group required">
+            <label class="col-sm-2 control-label" for="input-secret">
+              <span data-toggle="tooltip" title="{{ help_secret }}">{{ entry_secret }}</span>
+            </label>
+            <div class="col-sm-10">
+              <input type="password" name="payment_ab_router_secret"
+                     value="{{ payment_ab_router_secret }}"
+                     id="input-secret" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-gateway">
+              <span data-toggle="tooltip" title="{{ help_gateway }}">{{ entry_gateway }}</span>
+            </label>
+            <div class="col-sm-10">
+              <select name="payment_ab_router_gateway" id="input-gateway" class="form-control">
+                <option value="paypal" {{ payment_ab_router_gateway == 'paypal' ? 'selected' : '' }}>PayPal Standard</option>
+                <option value="stripe" {{ payment_ab_router_gateway == 'stripe' ? 'selected' : '' }}>Stripe</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-product-id">
+              <span data-toggle="tooltip" title="{{ help_product_id }}">{{ entry_product_id }}</span>
+            </label>
+            <div class="col-sm-10">
+              <input type="number" name="payment_ab_router_product_id"
+                     value="{{ payment_ab_router_product_id }}"
+                     id="input-product-id" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-status">{{ entry_status }}</label>
+            <div class="col-sm-10">
+              <select name="payment_ab_router_status" id="input-status" class="form-control">
+                <option value="1" {{ payment_ab_router_status ? 'selected' : '' }}>{{ text_enabled }}</option>
+                <option value="0" {{ not payment_ab_router_status ? 'selected' : '' }}>{{ text_disabled }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-sort-order">{{ entry_sort_order }}</label>
+            <div class="col-sm-10">
+              <input type="text" name="payment_ab_router_sort_order"
+                     value="{{ payment_ab_router_sort_order }}"
+                     id="input-sort-order" class="form-control" size="1" />
+            </div>
+          </div>
+
+          {# Callback URL (read-only) #}
+          <div class="form-group">
+            <label class="col-sm-2 control-label">Callback URL</label>
+            <div class="col-sm-10">
+              <code style="font-size:12px;">{{ callback_url }}</code>
+              <br/><small>Configure this URL in your payment gateway (PayPal IPN / Stripe Webhook).</small>
+            </div>
+          </div>
+
+          <div class="buttons clearfix">
+            <div class="pull-right">
+              <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {{ button_save }}</button>
+              <a href="{{ cancel }}" class="btn btn-default">{{ button_cancel }}</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{ footer }}

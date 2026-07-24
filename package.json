@@ -1,0 +1,36 @@
+{
+  "name": "converge",
+  "private": true,
+  "description": "Converge — 联盟营销追踪 SaaS (PHP 8.2 + Stimulus + HTMX)",
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo": "^8.0.23",
+    "htmx.org": "2.0.4",
+    "redis": "^6.1.0",
+    "ws": "^8.21.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.40.0",
+    "browser-sync": "^3.0.4",
+    "esbuild": "^0.28.1",
+    "tailwindcss": "^3.4.19"
+  },
+  "scripts": {
+    "dev": "php -S 0.0.0.0:8080 -t public/ & browser-sync start --config bs-config.js",
+    "build:js": "esbuild public/build/js/app.js --bundle --minify --outfile=public/build/js/bundle.min.js --format=iife",
+    "watch:js": "esbuild public/build/js/app.js --bundle --outfile=public/build/js/bundle.min.js --format=iife --watch",
+    "test:visual": "npx playwright test visual-regression.spec.js",
+    "test:visual:update": "npx playwright test visual-regression.spec.js --update-snapshots"
+  },
+  "lint-staged": {
+    "*.latte": [
+      "php scripts/check-latte-pitfalls.php",
+      "php -l"
+    ],
+    "*.php": [
+      "php -l",
+      "php scripts/check-spacing-compliance.php --staged"
+    ]
+  }
+}

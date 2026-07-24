@@ -1,0 +1,133 @@
+{
+  "description": "Converge URL → Template 完整映射表。修改 UI 前必查此表，避免改错文件。",
+  "generated": "2026-07-22",
+  "layoutShells": {
+    "_layout.latte": "VS Code 风格 Activity Bar + Dock 侧边栏。几乎所有 pages/* 使用。",
+    "index.latte": "传统侧边栏 + 顶部栏。仅 /?page=* 路由使用。自包含 shell。",
+    "_layouts/main.latte": "简化侧边栏 + 顶部栏。少数页面通过 {layout} 引用。"
+  },
+  "sharedComponents": {
+    "最近活动 (activity list)": {
+      "in": [
+        "templates/pages/dashboard.latte (admin-panel.php)",
+        "templates/_content/dashboard-body.latte (/?page=dashboard)"
+      ],
+      "warning": "⚠️ 此组件有两份独立实现！改一个不会影响另一个。应提取为共享 include。"
+    }
+  },
+  "routes": {
+    "/admin-panel.php": {
+      "php": "public/admin-panel.php",
+      "display": "pages/dashboard",
+      "template": "templates/pages/dashboard.latte",
+      "layout": "templates/_layout.latte",
+      "note": "管理后台主页，Alpine.js + ECharts，四视图"
+    },
+    "/?page=dashboard": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/_content/dashboard-body.latte",
+      "note": "MPA 路由入口，Stimulus 驱动侧边栏"
+    },
+    "/?page=campaigns": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/_content/campaigns-body.latte"
+    },
+    "/?page=flow-builder": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/_content/flow-builder-body.latte"
+    },
+    "/?page=bot-monitor": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/_content/bot-monitor-body.latte"
+    },
+    "/?page=webhooks": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/_content/webhooks-body.latte"
+    },
+    "/?page=reports": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/pages/reports.latte"
+    },
+    "/?page=settings": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/pages/settings.latte"
+    },
+    "/?page=stats": {
+      "php": "public/index.php",
+      "display": "index",
+      "template": "templates/index.latte",
+      "layout": "self-contained",
+      "content": "templates/pages/campaign-stats.latte"
+    },
+    "/campaigns.php": {
+      "php": "public/campaigns.php",
+      "display": "pages/campaigns-v2",
+      "template": "templates/pages/campaigns-v2.latte",
+      "layout": "templates/_layout.latte"
+    },
+    "/campaign-detail.php": {
+      "php": "public/campaign-detail.php",
+      "display": "pages/campaign-detail",
+      "template": "templates/pages/campaign-detail.latte",
+      "layout": "templates/_layout.latte"
+    },
+    "/conversions.php": {
+      "php": "public/conversions.php",
+      "display": "pages/conversions",
+      "template": "templates/pages/conversions.latte",
+      "layout": "templates/_layout.latte"
+    },
+    "/reports.php": {
+      "php": "public/reports.php",
+      "display": "pages/reports",
+      "template": "templates/pages/reports.latte",
+      "layout": "templates/_layout.latte"
+    },
+    "/flow-builder.php": {
+      "php": "public/flow-builder.php",
+      "display": "pages/flow-builder",
+      "template": "templates/pages/flow-builder.latte",
+      "layout": "templates/_layout.latte"
+    },
+    "/networks.php": {
+      "php": "public/networks.php",
+      "display": "patterns/list-crud-dock",
+      "template": "templates/patterns/list-crud-dock.latte",
+      "layout": "templates/_layout.latte"
+    },
+    "/traffic-sources.php": {
+      "php": "public/traffic-sources.php",
+      "display": "patterns/list-crud-dock",
+      "template": "templates/patterns/list-crud-dock.latte",
+      "layout": "templates/_layout.latte"
+    },
+    "/task-center.php": {
+      "php": "public/task-center.php",
+      "display": "pages/task-center",
+      "template": "templates/pages/task-center.latte",
+      "layout": "none"
+    }
+  },
+  "fixWorkflow": "修改 UI 前: ① 确认用户打开的 URL ② 查此表找到模板文件 ③ Read 确认内容 ④ 定位真实元素 ⑤ 再修改"
+}

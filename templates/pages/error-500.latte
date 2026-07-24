@@ -1,0 +1,31 @@
+{* templates/pages/error-500.latte — 500 Internal Server Error *}
+{* Render: LatteEngine::display('pages/error-500', ['zh'=>bool, 'pageTitle'=>string]) *}
+{* Blank layout — no nav, no footer, minimal error card *}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{$pageTitle }</title>
+<link rel="stylesheet" href="/build/css/design-tokens.css">
+{syntax off}<style>
+  .err-card{text-align:center;padding:80px 32px;max-width:480px;margin:0 auto;min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .err-card h1 { font-size:72px;color:var(--accent);margin-bottom:var(--space-2)}
+  .err-card h2 { font-size:20px;color:var(--content-primary);margin-bottom:var(--space-4)}
+  .err-card p{ color:var(--content-secondary);margin-bottom:var(--space-6);line-height:1.6}
+  .err-card a{ display:inline-block;padding:var(--space-3) var(--space-6);background:var(--accent-emphasis);color:#fff;text-decoration:none;border-radius:var(--radius-sm);font-weight:var(--weight-semibold)}
+  .err-card a:hover{ background:var(--accent-hover)}
+</style>{/syntax}
+</head>
+<body>
+<div class="err-card">
+  <h1>500</h1>
+  <h2>{if $zh}服务器出了点问题{else}Something Went Wrong{/if}</h2>
+  <p>{if $zh}我们正在修复，请稍后再试。{else}We're working on it. Please try again in a moment.{/if}</p>
+  <a href="/">{if $zh}刷新{else}Refresh{/if}</a>
+</div>
+
+<!-- L3:OK error-500 -->
+</body>
+</html>

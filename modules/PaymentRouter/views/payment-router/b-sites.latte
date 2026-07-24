@@ -1,0 +1,63 @@
+{layout 'templates/_layouts/dashboard.latte'}
+{block title}{__('nav.b_sites')}{/block}
+
+{block content}
+<div data-controller="payment-router-site"
+     data-payment-router-site-mode-value="B">
+
+  <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+    <h2>{__('b_sites.title')} — {__('b_sites.subtitle')}</h2>
+    <button class="btn btn--primary" data-action="click->payment-router-site#openCreateModal">
+      {__('b_sites.add')}
+    </button>
+  </div>
+
+  <div data-payment-router-site-target="loading" class="spinner">{__('common.loading')}</div>
+  <div data-payment-router-site-target="error" class="alert alert--error" style="display:none;"></div>
+
+  <div data-payment-router-site-target="content" class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{__('common.domain')}</th>
+          <th>{__('common.gateway')}</th>
+          <th>{__('common.weight')}</th>
+          <th>{__('common.daily_limit')}</th>
+          <th>{__('common.status')}</th>
+          <th>{__('common.today_orders')}</th>
+          <th>{__('common.actions')}</th>
+        </tr>
+      </thead>
+      <tbody data-payment-router-site-target="tableBody"></tbody>
+    </table>
+  </div>
+
+  {* 创建 B 站模态框 *}
+  <dialog data-payment-router-site-target="modal" class="modal">
+    <form data-action="submit->payment-router-site#createBSite" class="modal__form">
+      <h3>{__('b_sites.create_title')}</h3>
+      <label>{__('common.domain')} <input name="domain" required placeholder="pay.example.com"></label>
+      <label>{__('common.gateway')}
+        <select name="payment_gateway">
+          <option value="paypal">PayPal</option>
+          <option value="stripe">Stripe</option>
+          <option value="square">Square</option>
+          <option value="other">{__('common.other')}</option>
+        </select>
+      </label>
+      <label>{__('common.weight')} <input name="weight" type="number" value="1" min="1" max="10"></label>
+      <label>{__('common.daily_limit')} <input name="max_daily_orders" type="number" value="50" min="1"></label>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--secondary" data-action="click->payment-router-site#closeModal">{__('common.cancel')}</button>
+        <button type="submit" class="btn btn--primary">{__('common.create')}</button>
+      </div>
+    </form>
+  </dialog>
+</div>
+
+{syntax off}<script type="module">
+import SiteController from "./controllers/payment_router_site_controller.js";
+window.Stimulus.register("payment-router-site", SiteController);
+</script>{/syntax}
+{/block}
+<!-- L3:OK b-sites -->

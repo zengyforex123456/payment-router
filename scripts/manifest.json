@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "scripts": {
+    "agent-scout.sh":        {"purpose": "UI component reuse scout — scans existing components before new work", "category": "dev", "lang": "bash"},
+    "demo-verify-loop.sh":   {"purpose": "Demo verification loop — CI-like quality gate on local", "category": "verify", "lang": "bash"},
+    "deploy-verify.sh":      {"purpose": "8-step deployment verification (process→HTTP→PHP→DB→security)", "category": "deploy", "lang": "bash"},
+    "docker-local.sh":       {"purpose": "Local Docker build + test before server deploy", "category": "deploy", "lang": "bash"},
+    "docker-up.sh":          {"purpose": "One-click Docker Compose production launch", "category": "deploy", "lang": "bash"},
+    "extract-inline-css.js": {"purpose": "Extract inline CSS to build/css/*.css for production", "category": "build", "lang": "node"},
+    "migrate-db.php":        {"purpose": "Apply SQL migrations from database/migrations/", "category": "db", "lang": "php"},
+    "ops-panel.sh":          {"purpose": "Operations dashboard — health, logs, restart control", "category": "ops", "lang": "bash"},
+    "pre-deploy-check.sh":   {"purpose": "Pre-deploy quality gate (lint+test+build+audit)", "category": "deploy", "lang": "bash"},
+    "speckit-to-specfabric.js": {"purpose": "Convert SpecKit specs to SpecFabric format", "category": "dev", "lang": "node"}
+  }
+}

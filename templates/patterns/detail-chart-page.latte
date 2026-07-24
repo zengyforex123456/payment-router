@@ -1,0 +1,142 @@
+{* ═══════════════════════════════════════════
+   模式 3: Detail+Chart — 头部 + KPI行 + 图表 + 漏斗 + 明细
+
+   覆盖页面: 活动详情·报表分析·归因分析
+   组件树:
+     L5 Page → L4 Template (main.latte)
+       ├── L3: DetailHeader (名称/状态/元数据)
+       ├── L2: KPI Row (stat-card × 6)
+       ├── L3: Chart Grid (趋势图 + 地区分布)
+       ├── L3: Funnel + Recent Conversions
+       └── L2: EmptyState (无数据时)
+   ═══════════════════════════════════════════ *}
+
+{layout '../_layouts/main.latte'}
+
+{block content}
+<div class="detail-page" style="max-width:var(--container-max,1280px);margin:0 auto;display:flex;flex-direction:column;gap:var(--space-5)">
+
+  {* ── L3 生物体: 详情头部 — 名称/状态/来源/日期 ── *}
+  <header class="detail-header">
+    <div class="detail-header-left">
+      <a href="{$backUrl ?? '#'}" class="detail-back">←</a>
+      <div>
+        <div class="detail-title-row">
+          <h1 class="detail-name">{$item['name'] ?? '未命名'}</h1>
+          {if isset($item['status'])}
+          <span class="badge badge-{($item['status'] === 'active') ? 'success' : 'warning'}">
+            {($item['status'] === 'active') ? '● 运行中' : '⏸ 已暂停'}
+          </span>
+          {/if}
+        </div>
+        <div class="detail-meta">
+          {if isset($item['traffic_source'])}<span>{$item['traffic_source']}</span><span>·</span>{/if}
+          {if isset($item['budget_daily'])}<span>日预算 ${$item['budget_daily']}</span>{/if}
+        </div>
+      </div>
+    </div>
+    <div class="detail-header-actions">
+      {if isset($toggleAction)}
+      <button class="btn btn-ghost btn-sm" onclick="{$toggleAction}">{if ($item['status'] ?? 'active') === 'active'}⏸ 暂停{else}▶ 启用{/if}</button>
+      {/if}
+      {if isset($editAction)}
+      <button class="btn btn-primary btn-sm" onclick="{$editAction}">✏️ 编辑</button>
+      {/if}
+    </div>
+  </header>
+
+  {* ── L2 分子: KPI 行 (6 列) ── *}
+  {if !empty($kpis ?? [])}
+  <div class="detail-kpi-row">
+    {foreach $kpis as $kpi}
+      {include '../molecules/stat-card.latte',
+        icon: ($kpi['icon'] ?? '📊'),
+        label: ($kpi['label'] ?? ''),
+        value: ($kpi['value'] ?? '0'),
+        change: ($kpi['change'] ?? null),
+        trend: ($kpi['trend'] ?? 'flat')}
+    {/foreach}
+  </div>
+  {/if}
+
+  {* ── L3 生物体: 图表 + 地区 — 双列网格 ── *}
+  <div class="detail-grid">
+    <div class="detail-card">
+      <div class="detail-card-hd">
+        <h2>📈 时段趋势</h2>
+        <div class="detail-chip-group">
+          <button class="detail-chip active" onclick="window.switchChart('clicks')">点击</button>
+          <button class="detail-chip" onclick="window.switchChart('conversions')">转化</button>
+          <button class="detail-chip" onclick="window.switchChart('revenue')">收入</button>
+        </div>
+      </div>
+      <div class="detail-card-bd"><div id="detail-hourly" style="width:100%;height:300px"></div></div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-hd"><h2>🌍 地区分布</h2></div>
+      <div class="detail-card-bd">
+        {if empty($geo ?? [])}
+          {include '../molecules/empty-state.latte', icon: '🌍', title: '暂无地区数据', variant: 'empty'}
+        {else}
+        <div class="detail-geo-list">
+          {foreach $geo as $g}
+          <div class="detail-geo-item">
+            <div class="detail-geo-top">
+              <span>{$g['country']}</span>
+              <span>{$g['revenue']}</span>
+            </div>
+            <div class="detail-geo-bar-bg"><div class="detail-geo-bar" style="width:{$g['pct']}%"></div></div>
+          </div>
+          {/foreach}
+        </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+
+  {* ── L3 生物体: 漏斗 + 最近转化 ── *}
+  <div class="detail-grid">
+    <div class="detail-card">
+      <div class="detail-card-hd"><h2>🔻 转化漏斗</h2></div>
+      <div class="detail-card-bd">
+        {if empty($funnel ?? [])}
+          {include '../molecules/empty-state.latte', icon: '🔻', title: '暂无漏斗数据', variant: 'empty'}
+        {else}
+        <div class="detail-funnel">
+          {foreach $funnel as $f}
+          <div class="detail-funnel-item" style="width:{max(20, $f['pct'] * 15)}%">
+            <div class="detail-funnel-bar">
+              <span>{$f['stage']}</span>
+              <span>{$f['count']}</span>
+              <span>{$f['pct']}%</span>
+            </div>
+          </div>
+          {/foreach}
+        </div>
+        {/if}
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-hd"><h2>🕐 最近转化</h2></div>
+      <div class="detail-card-bd">
+        {if empty($conversions ?? [])}
+          {include '../molecules/empty-state.latte', icon: '✅', title: '暂无转化记录', variant: 'empty'}
+        {else}
+        <div class="detail-conv-list">
+          {foreach $conversions as $c}
+          <div class="detail-conv-item">
+            <span class="detail-conv-time">{$c['time']}</span>
+            <span class="detail-conv-amount">{$c['amount']}</span>
+            <span class="detail-conv-src">{$c['source']}</span>
+            <span class="detail-conv-st detail-conv-{($c['status'] === 'approved') ? 'ok' : 'pend'}">{$c['status']}</span>
+          </div>
+          {/foreach}
+        </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+</div>
+{/block}

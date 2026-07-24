@@ -1,0 +1,1 @@
+{"name":"SocialProof","category":"landing","props":{"title":{"type":"string","default":"What Our Users Say"},"subtitle":{"type":"string","default":"Join thousands of happy customers."},"stats":{"type":"string","optional":true}},"tokens":["--content-primary","--content-secondary","--content-tertiary","--surface-raised"],"status":"stable"}

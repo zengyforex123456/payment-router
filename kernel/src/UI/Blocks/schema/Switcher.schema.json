@@ -1,0 +1,1 @@
+{"name":"Switcher","category":"layout","props":{"threshold":{"type":"string","default":"480px","label":"切换阈值"},"gap":{"type":"enum","values":["sm","md","lg","xl"],"default":"md","label":"间距"},"limit":{"type":"enum","values":["2","3","4","6"],"default":"4","label":"最大列数"}},"tokens":["--space-sm","--space-md","--space-lg","--space-xl"],"status":"stable"}

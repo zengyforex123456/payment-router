@@ -1,0 +1,53 @@
+{layout 'templates/_layouts/dashboard.latte'}
+{block title}{__('nav.a_sites')}{/block}
+
+{block content}
+<div data-controller="payment-router-site"
+     data-payment-router-site-mode-value="A">
+
+  <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+    <h2>{__('a_sites.title')} — {__('a_sites.subtitle')}</h2>
+    <button class="btn btn--primary" data-action="click->payment-router-site#openCreateModal">
+      {__('a_sites.add')}
+    </button>
+  </div>
+
+  <div data-payment-router-site-target="loading" class="spinner">{__('common.loading')}</div>
+  <div data-payment-router-site-target="error" class="alert alert--error" style="display:none;"></div>
+
+  <div data-payment-router-site-target="content" class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{__('common.domain')}</th>
+          <th>{__('common.platform')}</th>
+          <th>{__('common.api_key')}</th>
+          <th>{__('common.status')}</th>
+          <th>{__('common.actions')}</th>
+        </tr>
+      </thead>
+      <tbody data-payment-router-site-target="tableBody"></tbody>
+    </table>
+  </div>
+
+  <dialog data-payment-router-site-target="modal" class="modal">
+    <form data-action="submit->payment-router-site#createASite" class="modal__form">
+      <h3>{__('a_sites.create_title')}</h3>
+      <label>{__('common.domain')} <input name="domain" required placeholder="shop.example.com"></label>
+      <label>{__('common.platform')}
+        <select name="platform">
+          <option value="woocommerce">WooCommerce</option>
+          <option value="opencart">OpenCart</option>
+          <option value="magento">Magento</option>
+          <option value="shopify">Shopify</option>
+        </select>
+      </label>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--secondary" data-action="click->payment-router-site#closeModal">{__('common.cancel')}</button>
+        <button type="submit" class="btn btn--primary">{__('common.create')}</button>
+      </div>
+    </form>
+  </dialog>
+</div>
+{/block}
+<!-- L3:OK a-sites -->

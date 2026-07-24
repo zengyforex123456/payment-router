@@ -1,0 +1,13 @@
+{
+  "score": 100,
+  "grade": "A-合格",
+  "updatedAt": "2026-07-16T00:00:00.000Z",
+  "dimensions": {
+    "modularization": 25,
+    "intraModuleLayering": 20,
+    "contractQuality": 20,
+    "singleResponsibility": 15,
+    "isolation": 10,
+    "fabricRegistration": 10
+  }
+}

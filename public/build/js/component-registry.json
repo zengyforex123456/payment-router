@@ -1,0 +1,32 @@
+{
+    "generated_at": "2026-07-21T05:17:00+00:00",
+    "components": [
+        "campaignsPage",
+        "cmdPalette",
+        "dashboard",
+        "dateSwitcher",
+        "dockNav",
+        "landingPage",
+        "onboarding",
+        "lpBuilder",
+        "realtimeStats",
+        "campaigns",
+        "landingPages",
+        "landingPagesPage",
+        "networks",
+        "networksPage",
+        "trafficSources",
+        "trafficSourcesPage",
+        "appShell",
+        "dashboardPage",
+        "dataTable",
+        "dock",
+        "theme",
+        "toast",
+        "autoRulesPage",
+        "campaignStats",
+        "flowBuilder",
+        "onboardingTour"
+    ],
+    "total": 26
+}

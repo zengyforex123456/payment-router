@@ -1,0 +1,13 @@
+{* 模式: List+CRUD + Dock 四部分布局 *}
+{layout '../_layout.latte'}
+
+{block content}
+  {include '../organisms/list-crud.latte',
+    crudId: ($crudId ?? 'crud'), title: ($title ?? '列表'),
+    createLabel: ($createLabel ?? '+ 新建'), baseUrl: ($baseUrl ?? '#'),
+    columns: ($columns ?? []), items: ($items ?? []),
+    filters: ($filters ?? []), rowActions: ($rowActions ?? []),
+    emptyIcon: ($emptyIcon ?? '📋'), emptyTitle: ($emptyTitle ?? '还没有数据'),
+    emptyDesc: ($emptyDesc ?? ''), searchPlaceholder: ($searchPlaceholder ?? '搜索...'),
+    formFields: ($formFields ?? '')}
+{/block}

@@ -1,0 +1,1 @@
+{"name":"Spacer","category":"content","props":{"height":{"type":"enum","values":["1","2","4","8","16","32"],"default":"4","label":"高度(px)"}},"tokens":[],"status":"stable"}

@@ -1,0 +1,1 @@
+{"name":"Sidebar","category":"layout","props":{"sideWidth":{"type":"string","default":"md","label":"Sidebar Width","enum":["sm","md","lg"]},"sidePosition":{"type":"string","default":"left","label":"Sidebar Position","enum":["left","right"]}},"tokens":["--surface-raised","--border-default"],"status":"stable"}

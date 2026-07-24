@@ -1,0 +1,31 @@
+{layout 'templates/_layouts/dashboard.latte'}
+{block title}{__('nav.order_mappings')}{/block}
+
+{block content}
+<div data-controller="payment-router-dashboard"
+     data-payment-router-dashboard-mode-value="mappings">
+
+  <h2>{__('mappings.title')}</h2>
+
+  <div data-payment-router-dashboard-target="loading" class="spinner">{__('common.loading')}</div>
+  <div data-payment-router-dashboard-target="error" class="alert alert--error" style="display:none;"></div>
+  <div data-payment-router-dashboard-target="empty" class="empty-state" style="display:none;">{__('mappings.no_data')}</div>
+
+  <div data-payment-router-dashboard-target="content" class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{__('mappings.a_order')}</th>
+          <th>{__('mappings.b_order')}</th>
+          <th>{__('mappings.amount')}</th>
+          <th>{__('mappings.status')}</th>
+          <th>{__('mappings.routing')}</th>
+          <th>{__('mappings.time')}</th>
+        </tr>
+      </thead>
+      <tbody data-payment-router-dashboard-target="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+{/block}
+<!-- L3:OK order-mappings -->

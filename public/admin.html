@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PaymentRouter — 管理面板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b;--radius:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.header h1{font-size:22px}.api-url{color:var(--muted);font-size:13px;font-family:monospace}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.card__label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.card__value{font-size:24px;font-weight:700;margin-top:2px}
+.card--active{border-left:3px solid var(--success)}.card--cooling{border-left:3px solid var(--warning)}.card--disabled{border-left:3px solid var(--danger)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+.panel__header{padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.panel__body{padding:14px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);font-size:13px}th{color:var(--muted);font-weight:500}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
+.badge--active,.badge--paid{background:var(--success);color:#fff}.badge--cooling{background:var(--warning);color:#000}.badge--disabled,.badge--failed{background:var(--danger);color:#fff}.badge--pending{background:var(--muted);color:#fff}
+.btn{padding:7px 14px;border-radius:var(--radius);border:none;cursor:pointer;font-size:13px;font-weight:500}.btn--primary{background:var(--primary);color:#fff}.btn--danger{background:var(--danger);color:#fff}.btn--warning{background:var(--warning);color:#000}.btn--sm{padding:3px 8px;font-size:11px}.btn:hover{opacity:.85}
+.tabs{display:flex;gap:0;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 16px;background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:13px;border-radius:var(--radius) var(--radius) 0 0;margin-right:-1px;color:var(--muted)}
+.tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.tab-content{display:none}.tab-content.active{display:block}
+canvas{max-height:220px}
+.spinner{text-align:center;padding:30px;color:var(--muted)}.empty{text-align:center;padding:30px;color:var(--muted)}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;margin-top:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width.3s}
+.progress-fill--safe{background:var(--success)}.progress-fill--warn{background:var(--warning)}.progress-fill--danger{background:var(--danger)}
+.form-group{margin-bottom:10px}.form-group label{font-size:11px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:3px}
+input,select{padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;width:100%;margin-top:2px}
+.toast{position:fixed;top:16px;right:16px;padding:10px 18px;border-radius:var(--radius);font-weight:500;z-index:9999;animation:fadeIn .3s;font-size:13px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.toast--success{background:var(--success);color:#fff}.toast--error{background:var(--danger);color:#fff}
+.flex{display:flex;gap:8px;align-items:center}.gap-sm{gap:6px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div><h1>💳 PaymentRouter</h1><span class="api-url" id="apiUrl">http://127.0.0.1:8080</span></div>
+  <div class="flex gap-sm">
+    <span id="trialBadge" style="display:none;background:var(--warning);color:#000;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600"></span>
+    <span id="tierBadge" style="background:var(--primary);color:#fff;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600">COMMUNITY</span>
+    <button class="btn btn--warning btn--sm" onclick="checkAlerts()">🔔</button>
+    <button class="btn btn--primary btn--sm" onclick="refreshAll()">🔄</button>
+    <select onchange="switchLang(this.value)" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px">
+      <option value="zh">中文</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid4" id="summaryCards">
+  <div class="card"><div class="card__label">总订单</div><div class="card__value" id="vOrders">—</div></div>
+  <div class="card"><div class="card__label">成功率</div><div class="card__value" id="vRate">—</div></div>
+  <div class="card"><div class="card__label">今日收入</div><div class="card__value" id="vRevenue">—</div></div>
+  <div class="card"><div class="card__label">可用 B 站</div><div class="card__value" id="vAvailable">—</div></div>
+</div>
+
+<!-- Charts + B-Site Status -->
+<div class="grid2">
+  <div class="panel">
+    <div class="panel__header">📈 7 天趋势</div>
+    <div class="panel__body"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel__header">🏪 B 站实时状态</div>
+    <div class="panel__body" id="bSiteCards"><div class="spinner">加载中...</div></div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('list')">📋 数据列表</button>
+  <button class="tab" onclick="switchTab('add')">➕ 新建站点</button>
+  <button class="tab" onclick="switchTab('strategy')">⚙️ 策略</button>
+  <button class="tab" onclick="switchTab('alerts')">🔔 告警配置</button>
+</div>
+
+<!-- Tab: List -->
+<div id="tab-list" class="tab-content active">
+  <div class="grid2">
+    <div class="panel"><div class="panel__header">🌐 A 站</div><div class="panel__body"><div class="spinner" id="aSp">加载中...</div><table style="display:none" id="aTable"><thead><tr><th>域名</th><th>平台</th><th>API Key</th><th>状态</th></tr></thead><tbody id="aBody"></tbody></table><div class="empty" style="display:none" id="aEmpty">暂无 A 站</div></div></div>
+    <div class="panel"><div class="panel__header">📋 订单映射</div><div class="panel__body"><div class="spinner" id="mSp">加载中...</div><table style="display:none" id="mTable"><thead><tr><th>A 订单</th><th>B 订单</th><th>金额</th><th>状态</th><th>时间</th></tr></thead><tbody id="mBody"></tbody></table></div></div>
+  </div>
+</div>
+
+<!-- Tab: Add -->
+<div id="tab-add" class="tab-content">
+  <div class="grid2">
+    <div class="panel"><div class="panel__header">🌐 注册 A 站</div><div class="panel__body">
+      <div class="form-group"><label>域名</label><input id="aDomain" placeholder="shop.example.com"></div>
+      <div class="form-group"><label>平台</label><select id="aPlatform"><option>woocommerce</option><option>opencart</option><option>magento</option><option>shopify</option></select></div>
+      <button class="btn btn--primary" onclick="addASite()">注册</button><div id="aResult" style="margin-top:8px;font-size:12px"></div></div>
+    </div>
+    <div class="panel"><div class="panel__header">🏪 注册 B 站</div><div class="panel__body">
+      <div class="form-group"><label>域名</label><input id="bDomain" placeholder="pay.example.com"></div>
+      <div class="form-group"><label>网关</label><select id="bGateway"><option>paypal</option><option>stripe</option><option>square</option><option>other</option></select></div>
+      <div class="grid2"><div class="form-group"><label>权重</label><input id="bWeight" type="number" value="3" min="1" max="10"></div><div class="form-group"><label>日上限</label><input id="bMaxDaily" type="number" value="100" min="1"></div></div>
+      <button class="btn btn--primary" onclick="addBSite()">注册</button><div id="bResult" style="margin-top:8px;font-size:12px"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Strategy -->
+<div id="tab-strategy" class="tab-content">
+  <div class="panel"><div class="panel__header">⚙️ 轮询策略配置</div><div class="panel__body">
+    <div class="form-group"><label>预设模板</label><select id="presetSelect"><option value="balanced">Balanced — 权重随机, 3次失败→30min冷却</option><option value="weight_priority">Weight Priority — 高权重优先, 5次失败→60min冷却</option><option value="safe_mode">Safe Mode — 轮询均匀, 1次失败→15min冷却</option><option value="high_volume">High Volume — 随机分发, 10次失败→120min冷却</option></select></div>
+    <button class="btn btn--primary" onclick="applyPreset()">应用预设</button>
+    <div id="strategyResult" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+  </div></div>
+</div>
+
+<!-- Tab: Alerts -->
+<div id="tab-alerts" class="tab-content">
+  <div class="panel"><div class="panel__header">🔔 告警通知配置</div><div class="panel__body">
+    <div class="form-group"><label>Telegram Bot Token</label><input id="tgToken" placeholder="123456:ABC-DEF..." value=""></div>
+    <div class="form-group"><label>Telegram Chat ID</label><input id="tgChatId" placeholder="-1001234567890"></div>
+    <div class="form-group"><label>Slack Webhook URL</label><input id="slackUrl" placeholder="https://hooks.slack.com/services/..."></div>
+    <button class="btn btn--warning" onclick="testAlert('telegram')">📱 测试 Telegram</button>
+    <button class="btn btn--warning" onclick="testAlert('slack')" style="margin-left:8px">💬 测试 Slack</button>
+    <div id="alertResult" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+  </div></div>
+</div>
+
+<script>
+const API='http://127.0.0.1:8080';
+const toast=(m,t)=>{const e=document.createElement('div');e.className=`toast toast--${t}`;e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),3000)};
+let trendChart=null;
+
+async function refreshAll(){await Promise.all([loadSummary(),loadBSiteCards(),loadASites(),loadMappings(),loadTrends()])}
+
+async function loadSummary(){
+  try{
+    const r=await fetch(`${API}/api/payment-router/dashboard`),d=await r.json();
+    if(!d.summary)return;
+    document.getElementById('vOrders').textContent=(d.summary.total_orders||0).toLocaleString();
+    document.getElementById('vRate').textContent=(d.summary.success_rate||0)+'%';
+    document.getElementById('vRevenue').textContent='$'+Number(d.summary.total_revenue||0).toLocaleString();
+    const available=d.b_sites?d.b_sites.filter(b=>b.b_status==='active').length:0;
+    document.getElementById('vAvailable').textContent=available+'/'+(d.b_sites?d.b_sites.length:0);
+  }catch(e){}
+}
+
+async function loadTrends(){
+  try{
+    const r=await fetch(`${API}/api/payment-router/dashboard/trends`),d=await r.json();
+    const ctx=document.getElementById('trendChart').getContext('2d');
+    if(trendChart)trendChart.destroy();
+    trendChart=new Chart(ctx,{type:'line',data:{labels:d.labels||[],datasets:[
+      {label:'订单',data:d.orders||[],borderColor:'#3b82f6',tension:.3,pointRadius:2},
+      {label:'成功',data:d.paid||[],borderColor:'#22c55e',tension:.3,pointRadius:2},
+      {label:'失败',data:d.failed||[],borderColor:'#ef4444',tension:.3,pointRadius:2}
+    ]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{x:{ticks:{color:'#64748b',font:{size:10}}},y:{ticks:{color:'#64748b',font:{size:10}}}}}});
+  }catch(e){}
+}
+
+async function loadBSiteCards(){
+  const el=document.getElementById('bSiteCards');
+  try{
+    const r=await fetch(`${API}/api/payment-router/b-sites`),sites=await r.json();
+    if(!sites||!sites.length){el.innerHTML='<div class="empty">暂无 B 站</div>';return}
+    el.innerHTML=sites.map(b=>{
+      const pct=b.maxDaily>0?Math.round((b.todayOrders||0)/b.maxDaily*100):0;
+      const pctCls=pct>80?'danger':pct>50?'warn':'safe';
+      return `<div class="card card--${b.status==='active'?'active':b.status==='cooling'?'cooling':'disabled'}" style="margin-bottom:8px">
+        <div class="flex" style="justify-content:space-between">
+          <div><strong>${esc(b.domain)}</strong> <span class="badge badge--${b.status==='active'?'active':b.status==='cooling'?'cooling':'disabled'}">${b.status}</span></div>
+          <div style="font-size:12px;color:var(--muted)">${esc(b.gateway)} · W:${b.weight}</div>
+        </div>
+        <div style="margin-top:6px;font-size:12px;color:var(--muted)">
+          今日: ${b.todayOrders||0} / ${b.maxDaily||0}
+          ${b.status==='cooling'?` <button class="btn btn--sm btn--warning" onclick="recoverBSite(${b.id})" style="margin-left:8px">🔄 手动恢复</button>`:''}
+        </div>
+        <div class="progress-bar"><div class="progress-fill progress-fill--${pctCls}" style="width:${Math.min(pct,100)}%"></div></div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty">加载失败</div>'}
+}
+
+async function recoverBSite(id){
+  try{
+    const r=await fetch(`${API}/api/payment-router/b-sites/${id}/recover`,{method:'POST'});
+    const d=await r.json();
+    if(r.ok){toast('B站 #'+id+' 已手动恢复','success');loadBSiteCards();loadSummary();}
+    else toast(d.error,'error');
+  }catch(e){toast('恢复失败','error')}
+}
+
+async function loadASites(){
+  const s=document.getElementById('aSp'),t=document.getElementById('aTable'),e=document.getElementById('aEmpty');
+  s.style.display='';t.style.display='none';e.style.display='none';
+  try{
+    const r=await fetch(`${API}/api/payment-router/a-sites`),d=await r.json();
+    if(!d||!d.length){s.style.display='none';e.style.display='';return}
+    document.getElementById('aBody').innerHTML=d.map(a=>`<tr><td>${esc(a.domain)}</td><td>${esc(a.platform)}</td><td><code>${esc(a.apiKey||'').substring(0,16)}…</code></td><td><span class="badge badge--${a.status==='active'?'active':'disabled'}">${a.status}</span></td></tr>`).join('');
+    s.style.display='none';t.style.display='';
+  }catch(ex){s.style.display='none';e.style.display=''}
+}
+
+async function loadMappings(){
+  const s=document.getElementById('mSp'),t=document.getElementById('mTable');
+  s.style.display='';t.style.display='none';
+  try{
+    const r=await fetch(`${API}/api/payment-router/mappings`),d=await r.json();
+    document.getElementById('mBody').innerHTML=(d.items||[]).map(m=>`<tr><td><code>${esc(m.a_order_id)}</code></td><td><code>${esc(m.b_order_id||'—')}</code></td><td>$${Number(m.amount).toFixed(2)}</td><td><span class="badge badge--${m.status}">${m.status}</span></td><td>${m.dispatched_at}</td></tr>`).join('');
+    s.style.display='none';t.style.display='';
+  }catch(ex){s.style.display='none'}
+}
+
+async function addASite(){
+  const r=document.getElementById('aResult');
+  try{
+    const resp=await fetch(`${API}/api/payment-router/a-sites`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenant_id:0,domain:document.getElementById('aDomain').value,platform:document.getElementById('aPlatform').value})});
+    const d=await resp.json();
+    r.innerHTML=resp.ok?`✅ 已注册！API Key: <code>${d.apiKey}</code>`:`❌ ${d.error}`;
+    if(resp.ok){loadASites();toast('A站已注册','success')}
+  }catch(e){r.textContent='❌ 连接失败'}
+}
+
+async function addBSite(){
+  const r=document.getElementById('bResult');
+  try{
+    const resp=await fetch(`${API}/api/payment-router/b-sites`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenant_id:0,domain:document.getElementById('bDomain').value,payment_gateway:document.getElementById('bGateway').value,weight:+document.getElementById('bWeight').value,max_daily_orders:+document.getElementById('bMaxDaily').value})});
+    const d=await resp.json();
+    r.innerHTML=resp.ok?`✅ 已注册: ${d.domain} (${d.gateway})`:`❌ ${d.error}`;
+    if(resp.ok){loadBSiteCards();loadSummary();toast('B站已注册','success')}
+  }catch(e){r.textContent='❌ 连接失败'}
+}
+
+async function applyPreset(){
+  const p=document.getElementById('presetSelect').value,r=document.getElementById('strategyResult');
+  try{
+    const resp=await fetch(`${API}/api/payment-router/strategy`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenant_id:0,preset:p})});
+    const d=await resp.json();
+    r.textContent=`✅ 策略: ${d.name} (${d.routing_method}, ${d.cooling_threshold}次/${d.cooldown_minutes}min)`;
+    toast('策略已切换: '+p,'success');
+  }catch(e){r.textContent='❌ 失败'}
+}
+
+async function checkAlerts(){
+  try{
+    const r=await fetch(`${API}/api/payment-router/alerts/check`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenant_id:0})});
+    const d=await r.json();
+    toast('告警检查完成: '+(d.length?d.join(', '):'无异常'),d.length?'error':'success');
+  }catch(e){toast('告警检查失败','error')}
+}
+
+async function testAlert(channel){
+  const r=document.getElementById('alertResult');
+  try{
+    const body={tenant_id:0,level:'info',title:'PaymentRouter 测试告警',message:`${channel} 通知渠道配置正确 ✅`,channels:[channel]};
+    if(channel==='telegram'){body.telegram_bot_token=document.getElementById('tgToken').value;body.telegram_chat_id=document.getElementById('tgChatId').value}
+    if(channel==='slack')body.slack_webhook_url=document.getElementById('slackUrl').value;
+    const resp=await fetch(`${API}/api/payment-router/alerts/test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await resp.json();
+    r.textContent=JSON.stringify(d);
+    toast(channel+' 测试已发送','success');
+  }catch(e){r.textContent='❌ 失败: '+e.message}
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML}
+
+// P1-Monetize: Trial + Tier + Upgrade
+async function loadTier(){try{const r=await fetch(`${API}/api/payment-router/feature-gate`),d=await r.json();document.getElementById("tierBadge").textContent=d.tier?.toUpperCase()||"COMMUNITY"}catch(e){}}
+async function loadTrial(){try{const r=await fetch(`${API}/api/payment-router/trial/status`),d=await r.json();const b=document.getElementById("trialBadge");if(d.in_trial){b.style.display="";b.textContent=`⏳ 试用 ${d.days_left}天剩余`}else{b.style.display="none"}}catch(e){}}
+async function startTrial(){try{const r=await fetch(`${API}/api/payment-router/trial/start`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tenant_id:0})}),d=await r.json();if(d.trial_active){toast(`试用已开通! ${d.days_left} 天全功能`,"success");loadTrial();loadTier()}}catch(e){toast("开通失败","error")}}
+async function upgradeTier(tier){if(!confirm(`升级到 ${tier}?`))return;try{const r=await fetch(`${API}/api/payment-router/upgrade`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tenant_id:0,tier})}),d=await r.json();if(d.upgraded){toast(`已升级到 ${tier}`,"success");loadTier()}}catch(e){toast("升级失败","error")}}
+
+// Add trial + upgrade to summary card area (insert before grid4)
+function renderMonetize(){const c=document.getElementById("summaryCards");if(!c||document.getElementById("monetizeBar"))return;const bar=document.createElement("div");bar.id="monetizeBar";bar.style.cssText="grid-column:1/-1;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;font-size:13px";bar.innerHTML=`<span id="monetizeMsg">加载中...</span>`;c.parentNode.insertBefore(bar,c);updateMonetizeBar()}
+async function updateMonetizeBar(){try{const g=await(await fetch(`${API}/api/payment-router/feature-gate`)).json();const t=await(await fetch(`${API}/api/payment-router/trial/status`)).json();const m=document.getElementById("monetizeMsg");if(!m)return;if(t.in_trial){m.innerHTML=`🎉 入门版全功能试用中 · <b>${t.days_left} 天</b>剩余 · <button class="btn btn--sm btn--primary" onclick="upgradeTier(\"pro\")">升级专业版 $800</button>`;return}if(g.tier==="community"){m.innerHTML=`🔓 社区版 (免费) · <button class="btn btn--sm btn--primary" onclick="startTrial()">开启 14 天全功能试用</button> · <button class="btn btn--sm btn--warning" onclick="upgradeTier(\"starter\")">$149/月</button> <button class="btn btn--sm" style="background:var(--success);color:#fff" onclick="upgradeTier(\"pro\")">买断 $800</button>`;return}if(g.tier==="starter"){m.innerHTML=`📦 入门版 ($149/月) · <button class="btn btn--sm btn--primary" onclick="upgradeTier(\"pro\")">升级专业版 $800</button> <button class="btn btn--sm" style="background:var(--success);color:#fff" onclick="upgradeTier(\"enterprise\")">企业版 $2,500</button>`;return}if(g.tier==="pro"){m.innerHTML=`💼 专业版 · <button class="btn btn--sm btn--primary" onclick="upgradeTier(\"enterprise\")">升级企业版 $2,500</button>`;return}m.innerHTML=`🏢 企业版`}catch(e){}
+
+// i18n
+const I18N={zh:{community:"社区版",starter:"入门版",pro:"专业版",enterprise:"企业版",trial:"试用",daysLeft:"{n} 天剩余",upgradeTo:"升级到 {t}",startTrial:"开启 14 天全功能试用",fullAccess:"全功能试用中",perMonth:"/月",oneTime:"买断"},en:{community:"Community",starter:"Starter",pro:"Professional",enterprise:"Enterprise",trial:"Trial",daysLeft:"{n} days left",upgradeTo:"Upgrade to {t}",startTrial:"Start 14-day trial",fullAccess:"Full access trial",perMonth:"/mo",oneTime:"One-time"}};
+let loc=(navigator.language||"en").startsWith("zh")?"zh":"en";
+function t(key,params={}){let s=I18N[loc][key]||key;Object.entries(params).forEach(([k,v])=>s=s.replace(`{${k}}`,v));return s}
+function switchLang(l){loc=l;localStorage.setItem("pr-lang",l);location.reload()}
+if(localStorage.getItem("pr-lang"))loc=localStorage.getItem("pr-lang");
+document.querySelector("select").value=loc;
+
+// Init
+refreshAll();loadTier();loadTrial();setTimeout(renderMonetize,500);
+setInterval(refreshAll,30000);
+</script>
+</body>
+</html>

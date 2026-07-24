@@ -1,0 +1,9 @@
+# 批量落盘 (每30秒)
+* * * * * cd /var/www/converge && php scripts/flush-click-buffer.php >> /var/www/converge/storage/logs/flush.log 2>&1
+* * * * * sleep 30; cd /var/www/converge && php scripts/flush-click-buffer.php >> /var/www/converge/storage/logs/flush.log 2>&1
+# 自愈守护 (每5分钟。L0由Docker healthcheck秒级处理,此脚本兜底)
+*/5 * * * * sh /var/www/converge/scripts/auto-heal.sh >> /var/www/converge/storage/logs/heal.log 2>&1
+# 数据库备份 (每天凌晨2点)
+0 2 * * * sh /var/www/converge/scripts/backup-db.sh >> /var/www/converge/storage/logs/backup.log 2>&1
+# Volume 快照 (每周日凌晨3点)
+0 3 * * 0 sh /var/www/converge/scripts/snapshot-volume.sh >> /var/www/converge/storage/logs/snapshot.log 2>&1

@@ -1,0 +1,1 @@
+{"name":"Badge","category":"indicators","props":{"variant":{"type":"enum","values":["default","success","warning","danger"],"default":"default"},"size":{"type":"enum","values":["sm","md"],"default":"md"}},"tokens":["--success","--danger","--warning","--radius-full"],"variants":["default","success","warning","danger"],"since":"2026-03-01","status":"stable"}

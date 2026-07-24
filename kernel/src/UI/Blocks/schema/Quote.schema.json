@@ -1,0 +1,1 @@
+{"name":"Quote","category":"content","props":{"text":{"type":"string","default":"引用文字","label":"引用"},"author":{"type":"string","default":"","label":"作者","optional":true}},"tokens":["--accent","--content-secondary","--content-tertiary"],"status":"stable"}

@@ -1,0 +1,1 @@
+{"name":"Comparison","category":"landing","props":{"badge":{"type":"string","default":"Comparison"},"title":{"type":"string","default":"See how Converge stacks up"},"competitors":{"type":"array","default":["Voluum","RedTrack","Binom"]}},"tokens":["--accent","--success","--content-primary","--content-tertiary","--surface-raised","--surface-overlay"],"status":"stable"}

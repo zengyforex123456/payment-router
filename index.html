@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PaymentRouter — 多站轮询支付中控</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--success:#22c55e;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+.hero{text-align:center;padding:80px 0 60px}
+.hero h1{font-size:48px;font-weight:800;line-height:1.2;margin-bottom:16px;background:linear-gradient(135deg,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:20px;color:var(--muted);max-width:600px;margin:0 auto 32px}
+.btn{display:inline-block;padding:14px 32px;border-radius:var(--radius);font-size:16px;font-weight:600;text-decoration:none;cursor:pointer;border:none}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-outline{border:2px solid var(--border);color:var(--text);margin-left:12px}.btn-outline:hover{border-color:var(--primary)}
+.features{padding:60px 0;text-align:center}.features h2{font-size:32px;margin-bottom:48px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:60px}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px 24px;text-align:left}.feat-card h3{font-size:18px;margin:12px 0 8px}.feat-card p{color:var(--muted);font-size:14px}.feat-icon{font-size:32px}
+.pricing{padding:60px 0;text-align:center}.pricing h2{font-size:32px;margin-bottom:16px}.pricing>p{color:var(--muted);margin-bottom:48px}
+.price-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px 24px;text-align:center;position:relative}
+.price-card.featured{border-color:var(--primary);border-width:2px;transform:scale(1.05)}.price-card h3{font-size:20px;margin-bottom:8px}
+.price{font-size:42px;font-weight:800;margin:16px 0}.price span{font-size:16px;color:var(--muted);font-weight:400}
+.price-card ul{list-style:none;text-align:left;margin:24px 0;font-size:14px}.price-card li{padding:6px 0;color:var(--muted)}.price-card li::before{content:"✓ ";color:var(--success)}
+.cta{text-align:center;padding:80px 0;background:linear-gradient(135deg,#1e3a5f,#0f172a);border-radius:var(--radius);margin:60px 0}
+.cta h2{font-size:36px;margin-bottom:16px}.cta p{color:var(--muted);margin-bottom:32px}
+.footer{text-align:center;padding:40px 0;border-top:1px solid var(--border);color:var(--muted);font-size:14px}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}.nav a{color:var(--muted);text-decoration:none;margin-left:24px}.nav a:hover{color:var(--text)}.logo{font-weight:700;font-size:20px}
+@media(max-width:768px){.grid3{grid-template-columns:1fr}.hero h1{font-size:32px}.price-card.featured{transform:none}}
+</style></head><body>
+<div class="container">
+<nav class="nav"><a href="/" class="logo">💳 PaymentRouter</a><div><a href="#features">功能</a><a href="#pricing">定价</a><a href="/login">登录</a><a href="/register" class="btn btn-primary" style="padding:8px 20px;font-size:14px">免费试用</a></div></nav>
+
+<section class="hero">
+<h1>一个中控，多个收款站<br>分散风险，稳定收款</h1>
+<p>将支付请求智能分发到多个 OpenCart B 站，规避单一 PayPal/Stripe 账户冻结导致的全盘停摆。开源免费起步，按需升级。</p>
+<div><a href="/register" class="btn btn-primary">免费试用 14 天</a><a href="#pricing" class="btn btn-outline">查看定价</a></div>
+</section>
+
+<section id="features" class="features"><h2>核心能力</h2>
+<div class="grid3">
+<div class="feat-card"><div class="feat-icon">🔀</div><h3>智能轮询分发</h3><p>4 种路由策略：加权随机、轮询、金额阈值、纯随机。自动选择最优 B 站完成收款。</p></div>
+<div class="feat-card"><div class="feat-icon">🛡️</div><h3>自动冷却恢复</h3><p>B 站连续失败自动冷却，冷却结束自动恢复。Safe Mode 下 1 次失败即切换，养号期无忧。</p></div>
+<div class="feat-card"><div class="feat-icon">📊</div><h3>实时仪表盘</h3><p>各 B 站状态、成功率趋势、7 天图表一目了然。Telegram/Slack 告警，异常秒级通知。</p></div>
+<div class="feat-card"><div class="feat-icon">🔐</div><h3>HMAC + JWT 双签名</h3><p>A 站→中控 HMAC 防伪造，中控→B 站 JWT 5 分钟时效防重放，Webhook 回调闭环。</p></div>
+<div class="feat-card"><div class="feat-icon">🐳</div><h3>一键部署</h3><p>Docker Compose 一行命令启动。也支持手动安装 + systemd 服务。源码买断，数据自主。</p></div>
+<div class="feat-card"><div class="feat-icon">🌐</div><h3>中英双语</h3><p>管理面板 + API 错误消息完整支持中文和英文，自动检测浏览器语言。</p></div>
+</div></section>
+
+<section id="pricing" class="pricing"><h2>简单定价</h2><p>从免费开始，按需升级。所有版本包含核心路由引擎。</p>
+<div class="grid3">
+<div class="price-card"><h3>🌱 社区版</h3><div class="price">免费</div><ul><li>1 A 站 + 1 B 站</li><li>加权随机策略</li><li>GitHub 开源</li><li>社区支持</li></ul><a href="/register" class="btn btn-outline" style="display:block;margin-top:16px">免费开始</a></div>
+<div class="price-card featured"><h3>📦 入门版</h3><div class="price">$149<span>/月</span></div><ul><li>1 A 站 + 2 B 站</li><li>全部 4 种策略</li><li>实时仪表盘 + 告警</li><li>SaaS 托管 + 自动更新</li><li>14 天免费试用</li></ul><a href="/register" class="btn btn-primary" style="display:block;margin-top:16px">开始试用</a></div>
+<div class="price-card"><h3>💼 专业版</h3><div class="price">$800<span> 买断</span></div><ul><li>2 A 站 + 5 B 站</li><li>完整源码自主部署</li><li>自定义策略参数</li><li>配置导出/导入</li><li>1 年更新 + 邮件支持</li></ul><a href="/register" class="btn btn-outline" style="display:block;margin-top:16px">购买源码</a></div>
+</div>
+<div style="margin-top:24px"><a href="/register" class="btn btn-outline">🏢 企业版 $2,500+ — 不限站点 · DSL 路由 · OEM · 专属支持</a></div></section>
+
+<section class="cta"><h2>准备好稳定收款了吗？</h2><p>14 天全功能免费试用，无需信用卡。随时取消。</p><a href="/register" class="btn btn-primary">免费开始</a></section>
+<footer class="footer"><p>&copy; 2026 PaymentRouter. Apache 2.0 开源.</p></footer>
+</div></body></html>

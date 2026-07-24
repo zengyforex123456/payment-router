@@ -1,0 +1,1 @@
+{"name":"Grid","category":"content","props":{"cols":{"type":"enum","values":["1","2","3","4"],"default":"2","label":"列数"},"gap":{"type":"enum","values":["2","4","6","8"],"default":"4","label":"间距"}},"tokens":[],"status":"stable"}

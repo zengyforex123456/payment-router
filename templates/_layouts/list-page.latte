@@ -1,0 +1,24 @@
+{* _layouts/list-page.latte — 标准列表页模板 *}
+{* 用法: LatteEngine::display('_layouts/list-page', ['title'=>'...', 'filter'=>FilterBar(...), 'table'=>$tableHtml]) *}
+
+{$pageHeader|noescape}
+
+{if $flash}
+<div class="alert alert-success">✅ {$flash }</div>
+{/if}
+
+{if $filter}
+{$filter|noescape}
+{/if}
+
+{if $isEmpty}
+<div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>{$emptyTitle ?? 'No data'}</h3>
+    {if $addUrl}
+    <a href="{$addUrl }" class="btn btn-primary">+ {$addLabel ?? 'Add New'}</a>
+    {/if}
+</div>
+{else}
+{$tableHtml|noescape}
+{/if}

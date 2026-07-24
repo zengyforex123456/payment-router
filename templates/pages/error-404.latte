@@ -1,0 +1,31 @@
+{* templates/pages/error-404.latte — 404 Not Found *}
+{* Render: LatteEngine::display('pages/error-404', ['zh'=>bool, 'pageTitle'=>string]) *}
+{* Blank layout — no nav, no footer, minimal error card *}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{$pageTitle }</title>
+<link rel="stylesheet" href="/build/css/design-tokens.css">
+{syntax off}<style>
+  .err-card{text-align:center;padding:80px 32px;max-width:480px;margin:0 auto;min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .err-card h1 { font-size:72px;color:var(--accent);margin-bottom:var(--space-2)}
+  .err-card h2 { font-size:20px;color:var(--content-primary);margin-bottom:var(--space-4)}
+  .err-card p{ color:var(--content-secondary);margin-bottom:var(--space-6);line-height:1.6}
+  .err-card a{ display:inline-block;padding:var(--space-3) var(--space-6);background:var(--accent-emphasis);color:#fff;text-decoration:none;border-radius:var(--radius-sm);font-weight:var(--weight-semibold)}
+  .err-card a:hover{ background:var(--accent-hover)}
+</style>{/syntax}
+</head>
+<body>
+<div class="err-card">
+  <h1>404</h1>
+  <h2>{if $zh}页面未找到{else}Page Not Found{/if}</h2>
+  <p>{if $zh}您要找的页面不存在或已被移动。{else}The page you're looking for doesn't exist or has been moved.{/if}</p>
+  <a href="/">{if $zh}返回工作台{else}Back to Dashboard{/if}</a>
+</div>
+
+<!-- L3:OK error-404 -->
+</body>
+</html>

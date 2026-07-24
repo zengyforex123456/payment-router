@@ -1,0 +1,9 @@
+{* L1 原子: Select — 下拉选择 *}
+<select name="{$name}" class="form-select"
+  {if isset($dataAction)}data-action="{$dataAction}"{/if}
+  {if ($required ?? false)}required{/if}>
+  {if isset($placeholder)}<option value="">{$placeholder}</option>{/if}
+  {foreach ($options ?? []) as $opt}
+  <option value="{$opt['value']}" {if ($opt['value'] ?? '') === ($value ?? '')}selected{/if}>{$opt['label']}</option>
+  {/foreach}
+</select>

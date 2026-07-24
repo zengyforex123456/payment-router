@@ -1,0 +1,194 @@
+{* ═══════════════════════════════════════════
+   index.latte — Converge 全局路由入口 (MPA Shell)
+
+   路由: ?page=dashboard | campaigns | settings | analytics
+   架构: 自包含 HTML 文档 · Stimulus shell_controller 驱动侧边栏
+   行为: Stimulus = shell (侧边栏) + dropdown (所有下拉) + tabs (内容切换)
+
+   PHP 传入:
+     $page         — 当前页面名 ('dashboard' | 'campaigns' | 'settings')
+     $user         — ['name'=>'Admin','avatar'=>null,'role'=>'Admin']
+     $roles        — ['Admin','Manager','Buyer']
+     $menuItems    — 侧边栏菜单 [{icon,label,url,page,active,badge}]
+     $headExtra    — 额外 <head> 内容
+
+   内容片段: templates/_content/{page}-body.latte (由 {if} 条件包含)
+
+   L3 自证: L3:OK index
+   ═══════════════════════════════════════════ *}
+
+{* ── 默认值 ── *}
+{var $page = $page ?? 'dashboard'}
+{var $user = array_merge(['name' => 'Admin', 'avatar' => null, 'role' => 'Admin'], (array)($user ?? []))}
+{var $roles = $roles ?? ['Admin', 'Manager', 'Buyer']}
+{var $menuItems = $menuItems ?? [
+    ['icon'=>'📊','label'=>'仪表盘','page'=>'dashboard','url'=>'/?page=dashboard','active'=>($page==='dashboard')],
+    ['icon'=>'📋','label'=>'广告活动','page'=>'campaigns','url'=>'/?page=campaigns','active'=>($page==='campaigns')],
+    ['icon'=>'🔀','label'=>'流量路径','page'=>'flow-builder','url'=>'/?page=flow-builder','active'=>($page==='flow-builder')],
+    ['icon'=>'📈','label'=>'报表详情','page'=>'reports','url'=>'/?page=reports','active'=>($page==='reports')],
+    ['icon'=>'🤖','label'=>'Bot 监控','page'=>'bot-monitor','url'=>'/?page=bot-monitor','active'=>($page==='bot-monitor')],
+    ['icon'=>'🔗','label'=>'Webhook','page'=>'webhooks','url'=>'/?page=webhooks','active'=>($page==='webhooks')],
+    ['icon'=>'⚙️','label'=>'系统设置','page'=>'settings','url'=>'/?page=settings','active'=>($page==='settings')],
+]}
+
+<!DOCTYPE html>
+<html lang="{$lang ?? 'en'}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{* 防闪烁: 页面渲染前应用暗黑模式 *}
+{syntax off}<script>(function(){var m=localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.classList.toggle('dark',m==='dark')})()</script>{/syntax}
+  <title>Converge — {block title}仪表盘{/block}</title>
+
+  {* 资源预连接 (性能) *}
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  {* 设计令牌 + 布局 + 组件样式 *}
+  <link rel="stylesheet" href="/build/css/design-tokens.css">
+  <link rel="stylesheet" href="/build/css/app-bundle.css">
+  <link rel="stylesheet" href="/build/css/dashboard-page.css">
+  <link rel="stylesheet" href="/build/css/grid.css">
+  <link rel="stylesheet" href="/build/css/app-shell.css">
+
+  {* ECharts — 仅仪表盘加载, defer 不阻塞渲染 *}
+  {if ($page ?? '') === 'dashboard'}
+  <script defer src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  {/if}
+
+  {* data-track → EventStore 追踪 *}
+  <script defer src="/assets/js/command-tracker.js"></script>
+
+  {$headExtra|noescape}
+  {block headExtra}{/block}
+</head>
+
+{* ═══════════════════════════════════════════
+   App Shell — Stimulus shell_controller 驱动
+   ═══════════════════════════════════════════ *}
+<body data-controller="shell layout-debug" data-shell-sidebar-open-value="true" data-shell-current-role-value="{$user['role']|lower}"
+      data-action="keydown.escape->shell#toggleSidebar"
+      class="app-wrapper flex">
+
+{* ═══ 侧边栏 ═══ *}
+<aside class="app-sidebar is-expanded" data-shell-target="sidebar">
+
+  {* Logo *}
+  <a href="/" class="sidebar-brand">
+    <span class="brand-dot"></span>
+    <span class="brand-text sidebar-label">Converge</span>
+  </a>
+
+  {* 导航 *}
+  <nav class="sidebar-nav">
+    {foreach $menuItems as $item}
+    <a href="{$item['url'] }"
+       class="sidebar-link {if $item['active']}active{/if}"
+       title="{$item['label'] }">
+      <span class="sidebar-link-icon">{$item['icon'] }</span>
+      <span class="sidebar-link-label sidebar-label">{$item['label'] }</span>
+      {if isset($item['badge'])}
+      <span class="sidebar-badge sidebar-label">{$item['badge'] }</span>
+      {/if}
+    </a>
+    {/foreach}
+  </nav>
+
+  {* 底部 *}
+  <div class="sidebar-footer sidebar-label">
+    <span>v2.8 · Converge</span>
+  </div>
+</aside>
+
+{* ═══ 主内容区 ═══ *}
+<div class="app-main">
+
+  {* ═══ 顶部栏 ═══ *}
+  <header class="app-topbar">
+    <div class="topbar-left">
+      {* 汉堡菜单 *}
+      <button class="topbar-btn-icon" data-action="click->shell#toggleSidebar"
+              aria-label="Toggle sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+
+      {* 页面标题 (动态) *}
+      <span class="topbar-page-title">
+        {if $page === 'dashboard'}仪表盘
+        {elseif $page === 'campaigns'}广告活动
+        {elseif $page === 'flow-builder'}流量路径
+        {elseif $page === 'bot-monitor'}Bot 监控
+        {elseif $page === 'webhooks'}Webhook
+        {elseif $page === 'settings'}系统设置
+        {elseif $page === 'analytics'}数据分析
+        {else}Converge{/if}
+      </span>
+    </div>
+
+    <div class="topbar-right">
+
+      {* 用户菜单 *}
+      <div class="topbar-dropdown-wrap" data-controller="dropdown" data-dropdown-close-outside-value="true">
+        <button class="topbar-btn-avatar" data-action="click->dropdown#toggle"
+                aria-label="User menu">
+          {if $user['avatar']}
+          <img src="{$user['avatar'] }" alt="{$user['name'] }" class="avatar-img">
+          {else}
+          <span class="avatar-placeholder">{substr(($user['name'] ?: 'U'), 0, 1)}</span>
+          {/if}
+        </button>
+        <div class="topbar-dropdown right" data-dropdown-target="panel" style="display:none">
+          <div class="topbar-dropdown-header">{$user['name'] }</div>
+          <a href="/?page=settings" class="topbar-dropdown-item">⚙️ 设置</a>
+          <hr class="topbar-dropdown-divider">
+          <a href="/logout.php" class="topbar-dropdown-item text-danger">🚪 退出</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {* ═══ 内容区 — 路由分发 ═══ *}
+  <main class="app-content">
+    {if $page === 'dashboard'}
+      {include '_content/dashboard-body.latte'}
+    {elseif $page === 'campaigns'}
+      {include '_content/campaigns-body.latte'}
+    {elseif $page === 'flow-builder'}
+      {include '_content/flow-builder-body.latte'}
+    {elseif $page === 'stats' && isset($campaign)}
+      {include 'pages/campaign-stats.latte'}
+    {elseif $page === 'reports'}
+      {include 'pages/reports.latte'}
+    {elseif $page === 'settings'}
+      {include 'pages/settings.latte'}
+    {elseif $page === 'bot-monitor'}
+      {include '_content/bot-monitor-body.latte'}
+    {elseif $page === 'webhooks'}
+      {include '_content/webhooks-body.latte'}
+    {else}
+      {* 404 *}
+      <div class="page-404">
+        <span class="page-404-icon">🧭</span>
+        <h2>页面未找到</h2>
+        <p>?page={$page } 不存在</p>
+        <a href="/?page=dashboard" class="btn btn-primary">返回仪表盘</a>
+      </div>
+    {/if}
+  </main>
+
+</div>
+
+{* ═══ JS: Stimulus bundle ═══ *}
+<script src="/build/js/bundle.min.js"></script>
+<script src="/build/js/theme-toggle.js"></script>
+
+{* App Shell CSS 已提取到 public/build/css/app-shell.css *}
+
+<!-- L3:OK index -->
+{include '_partials/toolbar-extras.latte'}
+</body>
+</html>

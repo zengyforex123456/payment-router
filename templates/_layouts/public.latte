@@ -1,0 +1,22 @@
+{* PublicLayout — centered header + main + footer for landing/marketing pages *}
+
+{* Header *}
+{if $header}
+<div class="{$maxWidth } mx-auto px-6 w-full py-4">
+  {$header|noescape}
+</div>
+{/if}
+
+{* Main content *}
+<div class="{$maxWidth } mx-auto px-6 w-full">
+  {$main|noescape}
+</div>
+
+{* Footer *}
+{if $footer}
+<footer class="border-t border-default mt-16 py-8 text-center text-sm text-content-tertiary">
+  <div class="{$maxWidth } mx-auto px-6 w-full">
+    {$footer|noescape}
+  </div>
+</footer>
+{/if}

@@ -1,0 +1,21 @@
+{* L2 分子: FormGroup — Label + Input/Select/Textarea + Error
+   参数: label, name, type (text|email|password|select|textarea|number), placeholder, required, value, error, options (for select) *}
+<div class="form-group">
+  <label class="form-label" for="field-{$name}">{$label}{if ($required ?? false)} <span class="form-required">*</span>{/if}</label>
+  {if ($type ?? 'text') === 'select'}
+    <select name="{$name}" id="field-{$name}" class="form-input" {if ($required ?? false)}required{/if}>
+      {if isset($placeholder)}<option value="">{$placeholder}</option>{/if}
+      {foreach ($options ?? []) as $optVal => $optLabel}
+        <option value="{$optVal}" {if ($value ?? '') == $optVal}selected{/if}>{$optLabel}</option>
+      {/foreach}
+    </select>
+  {elseif ($type ?? 'text') === 'textarea'}
+    <textarea name="{$name}" id="field-{$name}" class="form-input" placeholder="{$placeholder ?? ''}" {if ($required ?? false)}required{/if}>{$value ?? ''}</textarea>
+  {else}
+    <input type="{$type ?? 'text'}" name="{$name}" id="field-{$name}" class="form-input"
+      placeholder="{$placeholder ?? ''}" value="{htmlspecialchars($value ?? '')}" {if ($required ?? false)}required{/if}>
+  {/if}
+  {if isset($error) && $error}
+  <p class="form-error">{$error}</p>
+  {/if}
+</div>

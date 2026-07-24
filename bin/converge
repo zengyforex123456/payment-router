@@ -1,0 +1,254 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Converge CLI — 命令行管理工具 (对标 WP-CLI)
+ *
+ * 用法:
+ *   php converge                    # 帮助
+ *   php converge health             # 健康检查
+ *   php converge db:migrate         # 数据库迁移
+ *   php converge db:seed            # 创建管理员
+ *   php converge db:backup          # 数据库备份
+ *   php converge db:restore [file]  # 数据库恢复
+ *   php converge cache:clear        # 清除 OPcache
+ *   php converge test:all           # 运行全量测试
+ *   php converge test:ui            # UI界面测试
+ *   php converge test:api           # API端点测试
+ *   php converge test:perf          # 性能基线
+ *   php converge module:create <name>   # 创建新模块
+ *   php converge module:list        # 列出所有模块
+ *   php converge module:check <name>    # 检查模块合规
+ *   php converge deploy:canary      # 灰度部署
+ *   php converge deploy:rollback    # 回滚部署
+ *   php converge user:create <email> <password> <role>  # 创建用户
+ *   php converge user:list          # 列出用户
+ *   php converge kag:stats          # KAG 知识统计
+ *   php converge pipeline:run       # 运行全量管道
+ */
+
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') { die("CLI only\n"); }
+
+$projectRoot = realpath(__DIR__);
+require_once $projectRoot . '/vendor/autoload.php';
+require_once $projectRoot . '/config/config.php';
+require_once $projectRoot . '/src/bootstrap_web_paths.php';
+
+$db = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+$db->set_charset('utf8mb4');
+
+$cmd = $argv[1] ?? 'help';
+$args = array_slice($argv, 2);
+
+// ── 颜色输出 ──
+function green(string $s): string { return "\033[32m$s\033[0m"; }
+function red(string $s): string { return "\033[31m$s\033[0m"; }
+function yellow(string $s): string { return "\033[33m$s\033[0m"; }
+function bold(string $s): string { return "\033[1m$s\033[0m"; }
+
+// ── 帮助 ──
+if ($cmd === 'help') {
+    echo bold("Converge CLI v2.0") . "\n\n";
+    echo green("运维:") . "\n";
+    echo "  health             健康检查\n";
+    echo "  cache:clear        清除 OPcache\n";
+    echo "\n" . green("数据库:") . "\n";
+    echo "  db:migrate         运行数据库迁移\n";
+    echo "  db:seed            创建管理员账号\n";
+    echo "  db:backup          备份数据库\n";
+    echo "  db:restore [file]  从备份恢复\n";
+    echo "\n" . green("测试:") . "\n";
+    echo "  test:all           运行全量测试\n";
+    echo "  test:ui            UI界面测试\n";
+    echo "  test:api           API端点测试\n";
+    echo "  test:perf          性能基线\n";
+    echo "\n" . green("模块:") . "\n";
+    echo "  module:create <n>  创建新模块\n";
+    echo "  module:list        列出所有模块 (依赖+Hook状态)\n";
+    echo "  module:dry-run     预览加载顺序 (拓扑排序)\n";
+    echo "  module:check <n>   检查模块合规\n";
+    echo "\n" . green("部署:") . "\n";
+    echo "  deploy:canary      灰度部署\n";
+    echo "  deploy:rollback    回滚部署\n";
+    echo "  pipeline:run       运行全量管道\n";
+    echo "\n" . green("用户:") . "\n";
+    echo "  user:create <e> <p> <r>  创建用户\n";
+    echo "  user:list          列出用户\n";
+    echo "\n" . green("知识:") . "\n";
+    echo "  kag:stats          KAG 知识统计\n";
+    exit(0);
+}
+
+// ── 命令路由 ──
+try {
+    switch ($cmd) {
+        // ═══ 运维 ═══
+        case 'health':
+            $ch = curl_init('http://localhost/health');
+            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 5]);
+            $data = json_decode(curl_exec($ch), true); curl_close($ch);
+            echo ($data['ok'] ? green('✅ Healthy') : red('❌ Unhealthy')) . "\n";
+            echo "  PHP: " . ($data['observability']['php_version'] ?? '?') . "\n";
+            echo "  DB:  " . ($data['verifiability']['db']['status'] ?? '?') . "\n";
+            echo "  断言: " . json_encode($data['verifiability']['assertions'] ?? []) . "\n";
+            break;
+
+        case 'cache:clear':
+            if (function_exists('opcache_reset')) { opcache_reset(); echo green("✅ OPcache 已清除\n"); }
+            else { echo yellow("⚠️  OPcache 未启用\n"); }
+            break;
+
+        // ═══ 数据库 ═══
+        case 'db:migrate':
+            require_once $projectRoot . '/src/Database/MigrationRunner.php';
+            $runner = new \Converge\Database\MigrationRunner($db);
+            echo $runner->run() ? green("✅ 迁移完成\n") : red("❌ 迁移失败: " . implode(', ', $runner->getErrors()) . "\n");
+            break;
+
+        case 'db:seed':
+            $pw = password_hash($args[1] ?? 'admin123', PASSWORD_DEFAULT);
+            $email = $args[0] ?? 'admin@converge.test';
+            $role = $args[2] ?? 'admin';
+            $db->query("INSERT INTO users (email, password, name, role, created_at) VALUES ('$email', '$pw', 'Admin', '$role', NOW())");
+            echo green("✅ 用户创建: $email ($role)\n");
+            break;
+
+        case 'db:backup':
+            passthru("bash $projectRoot/scripts/backup-db.sh", $exitCode);
+            exit($exitCode);
+
+        case 'db:restore':
+            $file = $args[0] ?? '';
+            passthru("bash $projectRoot/scripts/restore-db.sh $file", $exitCode);
+            exit($exitCode);
+
+        // ═══ 测试 ═══
+        case 'test:all':
+            passthru("bash $projectRoot/scripts/pipeline.sh local", $exitCode);
+            exit($exitCode);
+
+        case 'test:ui':
+            passthru("php $projectRoot/public/ui-test.php", $exitCode);
+            exit($exitCode);
+
+        case 'test:api':
+            passthru("php $projectRoot/public/api-test.php", $exitCode);
+            exit($exitCode);
+
+        case 'test:perf':
+            passthru("php $projectRoot/public/perf-test.php", $exitCode);
+            exit($exitCode);
+
+        // ═══ 模块 ═══
+        case 'module:create':
+            $name = $args[0] ?? '';
+            if (!$name) { echo red("用法: converge module:create <模块名>\n"); exit(1); }
+            passthru("bash $projectRoot/scripts/module-scaffold.sh $name", $exitCode);
+            passthru("php $projectRoot/scripts/gen-module-registry.php", $exitCode);
+            break;
+
+        case 'module:list':
+            require_once $projectRoot . '/src/Core/ModuleLoader.php';
+            $loader = new \Converge\Core\ModuleLoader();
+            $order = $loader->resolve();
+            $mods = $loader->getModules();
+            $errors = $loader->getErrors();
+
+            echo bold("已发现模块: " . count($mods)) . "\n\n";
+            foreach ($mods as $name => $mod) {
+                $deps = $mod['depends_on'] ? ' → 依赖: ' . implode(', ', $mod['depends_on']) : '';
+                $bsOk = $mod['has_bootstrap'];
+                $bsFile = $mod['bootstrap'];
+                // Check if bootstrap was actually loaded (by checking get_included_files)
+                $loaded = in_array(realpath($bsFile), get_included_files());
+                if ($bsOk && $loaded) {
+                    $status = green('✅ 已加载');
+                } elseif ($bsOk) {
+                    $status = yellow('⚠ 未加载');
+                } else {
+                    $status = red('❌ 缺bootstrap');
+                }
+                echo "  $status " . bold($name) . "$deps\n";
+            }
+
+            if (class_exists('Converge\\Core\\Hooks')) {
+                $profile = \Converge\Core\Hooks::profile();
+                $active = count(array_filter($profile, fn($p) => $p['callbacks'] > 0));
+                echo "\n" . bold("Hook 统计: $active 个活跃 Hook") . "\n";
+            }
+
+            if ($errors) {
+                echo "\n" . red("依赖问题:") . "\n";
+                foreach ($errors as $e) { echo "   ❌ $e\n"; }
+            }
+            break;
+
+        case 'module:dry-run':
+            require_once $projectRoot . '/src/Core/ModuleLoader.php';
+            echo (new \Converge\Core\ModuleLoader())->dryRun() . "\n";
+            break;
+
+        case 'module:check':
+            $name = $args[0] ?? '';
+            passthru("bash $projectRoot/scripts/check-module-structure.sh $name", $exitCode);
+            exit($exitCode);
+
+        // ═══ 部署 ═══
+        case 'deploy:canary':
+            passthru("bash $projectRoot/scripts/canary-deploy.sh --dry-run", $exitCode);
+            exit($exitCode);
+
+        case 'deploy:rollback':
+            passthru("bash $projectRoot/scripts/rollback.sh", $exitCode);
+            exit($exitCode);
+
+        case 'pipeline:run':
+            passthru("bash $projectRoot/scripts/pipeline.sh local", $exitCode);
+            exit($exitCode);
+
+        // ═══ 用户 ═══
+        case 'user:create':
+            $email = $args[0] ?? ''; $password = $args[1] ?? ''; $role = $args[2] ?? 'user';
+            if (!$email || !$password) { echo red("用法: converge user:create <email> <password> [role]\n"); exit(1); }
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $db->prepare("INSERT INTO users (email, password, name, role, created_at) VALUES (?, ?, ?, ?, NOW())");
+            $name = explode('@', $email)[0];
+            $stmt->bind_param('ssss', $email, $hash, $name, $role);
+            $stmt->execute();
+            echo green("✅ 用户 $email ($role) 已创建\n");
+            break;
+
+        case 'user:list':
+            $r = $db->query("SELECT u.id, u.email, COALESCE(r.name, 'user') as role, u.created_at FROM users u LEFT JOIN user_roles ur ON u.id = ur.user_id LEFT JOIN roles r ON ur.role_id = r.id ORDER BY u.id");
+            echo bold("ID | Email | Role | Created\n");
+            echo str_repeat('-', 60) . "\n";
+            while ($row = $r->fetch_assoc()) {
+                printf("%3s | %-30s | %-8s | %s\n", $row['id'], $row['email'], $row['role'] ?? 'user', $row['created_at']);
+            }
+            break;
+
+        // ═══ KAG ═══
+        case 'kag:stats':
+            if (file_exists($projectRoot . '/src/Knowledge/KagClient.php')) {
+                require_once $projectRoot . '/src/Knowledge/KagClient.php';
+                $kag = new \Converge\Knowledge\KagClient($db);
+                $s = $kag->stats();
+                echo bold("KAG 知识库统计\n");
+                echo "  知识节点:  {$s['total']}\n";
+                echo "  错误指纹:  {$s['fingerprints']}\n";
+                echo "  24h 错误:  {$s['errors_24h']}\n";
+                echo "  分类:      " . json_encode($s['by_type'], JSON_UNESCAPED_UNICODE) . "\n";
+            } else {
+                echo yellow("⚠️  KAG 未安装\n");
+            }
+            break;
+
+        default:
+            echo red("未知命令: $cmd\n") . "运行 php converge help 查看帮助\n";
+            exit(1);
+    }
+} catch (Throwable $e) {
+    echo red("❌ 错误: " . $e->getMessage()) . "\n";
+    exit(1);
+}

@@ -1,0 +1,89 @@
+{
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Bash(rm -rf *)",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo BLOCKED; exit 1"
+                    }
+                ]
+            },
+            {
+                "matcher": "Bash(git push --force *)",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo BLOCKED; exit 1"
+                    }
+                ]
+            },
+            {
+                "matcher": "Write(**/*.env)",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo BLOCKED; exit 1"
+                    }
+                ]
+            },
+            {
+                "matcher": "Bash(git reset --hard *)",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo BLOCKED; exit 1"
+                    }
+                ]
+            }
+        ],
+        "SessionStart": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo '[SessionStart] Converge — PHP 8.2/Stimulus/MySQL 8.0 — 34 modules. CLAUDE.md + .claude/reference/* 已加载。当前分支: main'"
+                    }
+                ]
+            }
+        ],
+        "UserPromptSubmit": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo '[SDLC] 当前阶段: 按需执行 (P1需求→P2编码→P3测试→P4审查→P5部署)。新功能先评估模块归属(见 agent-converge.md)。UI变更走TDA管道(见 reference/tda-architecture.md)。编码遵循6条AI行为边界(见 reference/ai-boundaries.md)。'"
+                    }
+                ]
+            }
+        ],
+        "PreCompact": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo '[PreCompact] 上下文即将压缩。保留关键状态: 当前任务+修改文件清单+未完成决策。详见 rules/02-session-memory.md'"
+                    }
+                ]
+            }
+        ],
+        "SubagentStart": [
+            {
+                "matcher": "*",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo '[SubagentStart] 注入项目上下文: PHP 8.2 · Stimulus · Latte 3 · 六边形架构。架构铁律: Domain零IO·文件≤150行·跨模块仅Hooks/EventBus。数据注入: json_encode(JSON_HEX_APOS|JSON_HEX_TAG)。UI走TDA管道。禁止: Alpine.js·jQuery·内联style。'"
+                    }
+                ]
+            }
+        ]
+    },
+    "worktree": {
+        "baseRef": "head"
+    }
+}

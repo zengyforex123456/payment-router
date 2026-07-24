@@ -1,0 +1,235 @@
+/* ═══════════════════════════════════════════
+   Converge Design Tokens v5 — Light + Dark
+   规范: :root=Light(默认), html.dark=Dark
+   ═══════════════════════════════════════════ */
+
+:root {
+  /* ── 背景层 (Light: 纯白→浅灰渐变) ── */
+  --bg-base:       #f8fafc; /* token */
+  --bg-raised:     #ffffff; /* token */
+  --bg-overlay:    #f1f5f9; /* token */
+  --bg-card:       #ffffff; /* token */
+
+  /* ── 文字层 (WCAG AAA — 浅底深字) ── */
+  --text-primary:   #0f172a; /* token */
+  --text-secondary: #334155; /* token */
+  --text-tertiary:  #64748b; /* token */
+  --text-inverse:   #f8fafc; /* token */
+
+  /* ── 边框 ── */
+  --border-default: #cbd5e1; /* token */
+  --border-strong:  #94a3b8; /* token */
+
+  /* ── 品牌色 (Profit Cockpit: 翠绿盈利·琥珀告警·玫瑰红亏损) ── */
+  --accent:         #059669; /* token — profit green */
+  --accent-hover:   #047857; /* token */
+  --accent-soft:    rgba(5, 150, 105, 0.08);
+  --accent-glow:    rgba(5, 150, 105, 0.15);
+
+  /* ── 语义色 (色彩心理学: 翠绿=盈利·琥珀=警告·玫瑰红=亏损·石板灰=信息) ── */
+  --success:        #10b981; /* token — emerald profit */
+  --success-soft:   rgba(16, 185, 129, 0.10);
+  --danger:         #e11d48; /* token — rose loss */
+  --danger-soft:    rgba(225, 29, 72, 0.08);
+  --warning:        #f59e0b; /* token — amber alert */
+  --warning-soft:   rgba(245, 158, 11, 0.10);
+  --info:           #64748b; /* token — slate info (de-emphasized) */
+  --info-soft:      rgba(100, 116, 139, 0.10);
+
+  /* ── 间距 (4px 倍数) ── */
+  --space-1:  4px;   --space-2:  8px;   --space-3: 12px;
+  --space-4: 16px;   --space-5: 20px;   --space-6: 24px;
+  --space-8: 32px;   --space-10:40px;   --space-12:48px;
+
+  /* ── 12列网格系统 ── */
+  --grid-cols: 12;
+  --grid-gap: var(--space-4);
+
+  /* ── 圆角 ── */
+  --radius-sm:  6px;
+  --radius-md:  8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ── 阴影 ── */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.4);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,.5);
+  --shadow-glow: 0 0 16px var(--accent-glow);
+
+  /* ── 字体 ── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --text-xs:  0.75rem;   --text-sm:  0.875rem;
+  --text-base: 1rem;      --text-lg:  1.125rem;
+  --text-xl:  1.25rem;    --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* ── 动效 ── */
+  --motion-fast:   120ms ease;
+  --motion-normal: 200ms ease;
+  --motion-slow:   300ms ease;
+
+  /* ── Bridge: old token names → design tokens (backward compat) ── */
+  /* All existing CSS uses --surface-* / --content-* naming.            */
+  /* These aliases make design-tokens.css the SINGLE :root truth source. */
+  --surface-base:    var(--bg-base);      /* token */
+  --surface-raised:  var(--bg-raised);    /* token */
+  --surface-overlay: var(--bg-overlay);   /* token */
+  --content-primary:   var(--text-primary);   /* token */
+  --content-secondary: var(--text-secondary); /* token */
+  --content-tertiary:  var(--text-tertiary);  /* token */
+  --content-inverse:   var(--text-inverse);   /* token */
+  --accent-emphasis:   var(--accent);         /* token */
+  --border-subtle:     var(--border-default); /* token */
+
+  /* ── Bridge: --color-* naming convention → design tokens ── */
+  /* Templates like toolbar-extras, campaign-stats, flow-builder use   */
+  /* --color-surface / --color-surface-alt / --color-border-strong     */
+  /* which were undefined → dark fallbacks activated in light mode.    */
+  --color-surface:       var(--bg-raised);      /* token */
+  --color-surface-alt:   var(--bg-overlay);     /* token */
+  --color-border:        var(--border-default); /* token */
+  --color-border-strong: var(--border-strong);  /* token */
+  --color-accent:        var(--accent);         /* token */
+  --color-text-primary:   var(--text-primary);   /* token */
+  --color-text-secondary: var(--text-secondary); /* token */
+  --color-text-tertiary:  var(--text-tertiary);  /* token */
+
+  /* ── Typography weights (referenced by flow-monitor.css, dock-layout.css) ── */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --tracking-tight: -0.025em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --transition: 200ms ease;
+
+  /* ── Extended text sizes ── */
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+
+  /* ── Extended shadows ── */
+  --shadow-xl: 0 16px 48px rgba(0,0,0,.5);
+  --shadow-accent: 0 2px 12px var(--accent-glow);
+
+  /* ── Extended radii ── */
+  --radius-2xl: 24px;
+
+  /* ── Extended motion ── */
+  --motion-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Sidebar tokens ── */
+  --sidebar-bg: #0f172a;     /* token */
+  --sidebar-text: #e2e8f0;  /* token */
+  --sidebar-muted: #64748b; /* token */
+  --sidebar-hover: #1e293b; /* token */
+  --sidebar-active: var(--accent);
+  --sidebar-accent: var(--accent);
+
+  /* ── Chart palette tokens ── */
+  --chart-blue:  #2563eb; /* token — clicks */
+  --chart-green: #00f0a8; /* token — revenue */
+  --chart-grid:  #f1f5f9; /* token — grid lines */
+}
+
+/* ═══ Dark Theme (html.dark) ═══ */
+html.dark {
+  --bg-base:       #080b12; /* token */
+  --bg-raised:     #111820; /* token */
+  --bg-overlay:    #1a2536; /* token */
+  --bg-card:       #1a2536; /* token */
+  --text-primary:   #f0f4fc; /* token */
+  --text-secondary: #ccd8ea; /* token */
+  --text-tertiary:  #a0b8d0; /* token */
+  --text-inverse:   #080b12; /* token */
+  --border-default: #4a6080; /* token */
+  --border-strong:  #607899; /* token */
+  --accent:         #34d399; /* token — brighter emerald for dark */
+  --accent-hover:   #10b981; /* token */
+  --accent-soft:    rgba(0, 240, 168, 0.10); /* token */
+  --accent-glow:    rgba(0, 240, 168, 0.25); /* token */
+  --sidebar-bg:     #0f172a; /* token */
+  --sidebar-text:   #e2e8f0; /* token */
+  --sidebar-muted:  #64748b; /* token */
+  --sidebar-hover:  #1e293b; /* token */
+
+  /* ── Chart palette (dark: brighter for contrast) ── */
+  --chart-blue:  #60a5fa; /* token */
+  --chart-green: #00f0a8; /* token */
+  --chart-grid:  #334155; /* token */
+}
+
+/* ── 全局重置 ── */
+*,::before,::after{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font-family:var(--font-sans);font-size:var(--text-sm);
+  background:var(--bg-base);color:var(--text-secondary);
+  margin:0;line-height:1.5;
+}
+h1,h2,h3,h4{color:var(--text-primary)}
+a{color:var(--accent)}
+::selection{background:var(--accent-soft);color:var(--accent)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-default);border-radius:10px}
+
+/* ═══ 12列网格合约 (强制, AI不可偏离) ═══ */
+/* 所有 grid 容器默认 12 列 + 统一间距 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-cols, 12), minmax(0, 1fr));
+  gap: var(--grid-gap, var(--space-4));
+}
+/* 列跨度: .col-1 到 .col-12 */
+.col-1  { grid-column: span 1 / span 1; }
+.col-2  { grid-column: span 2 / span 2; }
+.col-3  { grid-column: span 3 / span 3; }
+.col-4  { grid-column: span 4 / span 4; }
+.col-5  { grid-column: span 5 / span 5; }
+.col-6  { grid-column: span 6 / span 6; }
+.col-7  { grid-column: span 7 / span 7; }
+.col-8  { grid-column: span 8 / span 8; }
+.col-9  { grid-column: span 9 / span 9; }
+.col-10 { grid-column: span 10 / span 10; }
+.col-11 { grid-column: span 11 / span 11; }
+.col-12 { grid-column: span 12 / span 12; }
+/* AI 写错类名时的降级: 任何 grid 容器子元素默认占12列 */
+.grid > *:not([class*="col-"]) {
+  grid-column: span 12 / span 12;
+}
+/* ═══ Glass cards — 磨砂玻璃 KPI ═══ */
+.glass-kpi {
+  background: rgba(255,255,255,0.45); backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3);
+  border-radius: var(--radius-lg); box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+}
+html.dark .glass-kpi { background: rgba(17,24,32,0.55); border-color: rgba(255,255,255,0.06); }
+
+/* ═══ ROI Heatmap ═══ */
+.roi-red    { color: #dc2626 !important; font-weight: 700; }     /* ROI < -30% */
+.roi-orange { color: #ea580c !important; font-weight: 600; }     /* ROI -30% ~ 0% */
+.roi-yellow { color: #ca8a04 !important; }                        /* ROI 0% ~ 20% */
+.roi-green  { color: #16a34a !important; font-weight: 600; }     /* ROI 20% ~ 100% */
+.roi-rocket { color: #059669 !important; font-weight: 700; }     /* ROI > 100% */
+
+/* ═══ Animated counter ═══ */
+@keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.kpi-value-animated { animation: countUp 0.6s ease-out; }
+
+/* 响应式: 移动端自动单列 */
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
+  .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+  .col-7, .col-8, .col-9, .col-10, .col-11, .col-12 {
+    grid-column: span 1 / span 1;
+  }
+}

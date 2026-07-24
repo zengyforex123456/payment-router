@@ -1,0 +1,53 @@
+# Dependencies
+/vendor/
+/data/source/vendor/
+/node_modules/
+
+# Environment
+.env
+composer.lock
+
+# Test artifacts
+.phpunit.result.cache
+test-results/
+
+# OS
+.DS_Store
+
+# ── Large data files (免提交) ──
+# Geo IP databases (50-130MB each)
+storage/GeoLite2-City.mmdb
+storage/geoip/
+storage/*.mmdb
+storage/*.BIN
+
+# Archives & installers
+*.zip
+*.7z
+*.tar.gz
+
+# Binaries
+*.exe
+*.traineddata
+
+# Storage
+storage/cache/
+storage/logs/
+storage/snapshots/
+supervisord.log
+supervisord.pid
+
+# Auto-generated runtime tracking (pre-commit hook 自动更新)
+storage/tool-events.jsonl
+storage/capability-registry.json
+
+# Render check artifacts
+storage/phpunit-*.log
+storage/*-check.html
+storage/final-check.html
+
+# Git filter-branch artifacts
+.git-rewrite/
+
+# GitHub Actions (needs workflow OAuth scope — skip for now)
+.github/workflows/
