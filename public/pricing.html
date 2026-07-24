@@ -20,15 +20,15 @@
 
 <script>
 // ── CONFIG — change these values ──
-const PADDLE_TOKEN = 'test_91b1b1fb4804991d0593593989a';
-const PADDLE_ENV   = 'sandbox';
+const PADDLE_TOKEN = '__LIVE_CLIENT_TOKEN__'; // set from env var
+const PADDLE_ENV   = 'production';
 const COUNTRY      = ''; // let Paddle auto-detect from IP
 
 // ── Tiers (edit freely) ──
 const TIERS = [
-  { name:'Starter', desc:'For solo sellers', features:['1 A-site + 2 B-sites','All 4 routing strategies','Real-time dashboard','Telegram alerts','Community support'], priceId:{month:'pri_01kya9ae4x76bhz6bwmvz471ek',year:'pri_01kya9aeemyzb6kqzbscakemm6'}},
-  { name:'Pro',     desc:'For growing stores',  features:['2 A-sites + 5 B-sites','Custom strategy params','Source code included','Config export/import','Email support'], priceId:{month:'pri_01kya9af2p357py6sge2ra2n3a',year:'pri_01kya9afc4dd45wftsvmkcqfa4'}, featured:true },
-  { name:'Advanced',desc:'For agencies & enterprise', features:['Unlimited A/B sites','DSL routing scripts','OEM white-label','Multi-tenant dashboard','Dedicated support + SLA'], priceId:{month:'pri_01kya9afzpjwcxv45ns8d03xrk',year:'pri_01kya9agrd3fhz3f6x5wkk54qh'}},
+  { name:'Starter', desc:'For solo sellers', features:['1 A-site + 2 B-sites','All 4 routing strategies','Real-time dashboard','Telegram alerts','Community support'], priceId:{month:'pri_01kyabw73w1sd9z98bkmj3mbfd',year:'pri_01kyabw7kn02c6d4rwvy8463pr'}},
+  { name:'Pro',     desc:'For growing stores',  features:['2 A-sites + 5 B-sites','Custom strategy params','Source code included','Config export/import','Email support'], priceId:{month:'pri_01kyabw8sp2rb0680qkbdw16pf',year:'pri_01kyabw98v3gbcv789ma4ktx2q'}, featured:true },
+  { name:'Advanced',desc:'For agencies & enterprise', features:['Unlimited A/B sites','DSL routing scripts','OEM white-label','Multi-tenant dashboard','Dedicated support + SLA'], priceId:{month:'pri_01kyabwagrfc2f8k9bb2q18e2v',year:'pri_01kyabwb01qxdzt3aghz90wcsh'}},
 ];
 
 let billing = 'month';
