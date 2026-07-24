@@ -117,9 +117,27 @@ header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Signature, X-Api-Key');
 if ($method === 'OPTIONS') { http_response_code(204); exit; }
 
+// ── Embed JS (SaaS 核心交付入口) ──
+if ($path === '/embed.js') {
+    header('Content-Type: application/javascript; charset=utf-8');
+    header('Cache-Control: public, max-age=300, s-maxage=600');
+    header('Access-Control-Allow-Origin: *');
+    try {
+        require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Application/EmbedJsUseCase.php';
+        $embed = new \Converge\Modules\PaymentRouter\Cloak\Application\EmbedJsUseCase(svc('db'));
+        echo $embed->render($_GET);
+    } catch (\Throwable $e) {
+        // DB 不可用 → 返回静态社区版
+        $safe = json_encode($_GET['safe'] ?? '');
+        $real = json_encode($_GET['real'] ?? '');
+        echo "(function(){var s={$safe},r={$real};if(s&&s!==location.href)location.replace(s);console.warn('[Cloak] DB unavailable, running in community mode');})();";
+    }
+    exit;
+}
+
 // Serve static pages
 $staticPages = ['/' => 'index.html', '/login' => 'login.html', '/register' => 'register.html',
-    '/app' => 'app.html', '/admin' => 'admin.html', '/pricing' => 'index.html'];
+    '/app' => 'app.html', '/admin' => 'admin.html', '/pricing' => 'index.html', '/docs' => 'docs.html'];
 foreach ($staticPages as $p => $f) {
     if ($path === $p) { header('Content-Type: text/html; charset=utf-8'); readfile(__DIR__ . '/../../public/' . $f); exit; }
 }
@@ -127,6 +145,44 @@ foreach ($staticPages as $p => $f) {
 // Static files — PHP built-in server serves them directly
 if (preg_match('/\.(css|js|png|ico|svg|woff2?)$/', $path)) {
     return false;
+}
+
+// ── Docs: serve .md files as styled HTML ──
+if (preg_match('#^/docs/(\w[\w-]*)$#', $path, $m)) {
+    $slug = $m[1];
+    $map = ['quickstart'=>'DELIVERY_PLAN','deploy'=>'DEPLOY','api'=>'API','user-guide'=>'USER_GUIDE',
+            'business'=>'BUSINESS_MODEL','delivery'=>'DELIVERY_PLAN','cloak'=>'DELIVERY_PLAN','wordpress'=>'USER_GUIDE'];
+    $file = __DIR__ . '/../../docs/' . ($map[$slug] ?? strtoupper($slug)) . '.md';
+    if (file_exists($file)) {
+        $md = file_get_contents($file);
+        $title = preg_match('/^#\s+(.+)/m', $md, $tm) ? $tm[1] : $slug;
+        $html = '<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>'.$title.' — PaymentRouter</title>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--radius:8px}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:40px;max-width:800px;margin:0 auto}
+h1{font-size:28px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px}
+h2{font-size:20px;margin:32px 0 12px;color:var(--primary)}h3{font-size:16px;margin:20px 0 8px}
+p{margin:8px 0;color:var(--text)}code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:13px;border:1px solid var(--border)}
+pre{background:var(--surface);padding:16px;border-radius:var(--radius);overflow-x:auto;font-size:13px;margin:12px 0;border:1px solid var(--border)}
+pre code{background:none;border:none;padding:0}table{width:100%;border-collapse:collapse;margin:16px 0}
+th,td{text-align:left;padding:8px 12px;border:1px solid var(--border);font-size:13px}th{background:var(--surface)}
+a{color:var(--primary)}ul,ol{margin:8px 0;padding-left:24px}li{margin:4px 0;font-size:14px}
+.back{margin-top:40px;font-size:13px;color:var(--muted)}.back a{color:var(--primary)}</style></head><body>
+<div class="back"><a href="/docs">← 文档首页</a> · <a href="/">返回首页</a></div>
+';
+        $html .= '<div class="content">' . preg_replace_callback('/```(\w*)\n(.*?)```/s', function($b){return '<pre><code>'.htmlspecialchars($b[2]).'</code></pre>';},
+            preg_replace_callback('/`([^`]+)`/', function($b){return '<code>'.htmlspecialchars($b[1]).'</code>';},
+            preg_replace('/^### (.+)/m','<h3>$1</h3>',
+            preg_replace('/^## (.+)/m','<h2>$1</h2>',
+            preg_replace('/^# (.+)/m','<h1>$1</h1>',
+            preg_replace('/\|(.+)\|/','<tr><td>'.str_replace('|','</td><td>','$1').'</td></tr>',
+            preg_replace('/^- (.+)/m','<li>$1</li>',
+            preg_replace('/^(\d+)\. (.+)/m','<li>$2</li>',
+            preg_replace('/\n\n/','</p><p>',
+            '<p>'.htmlspecialchars($md).'</p>'
+        ))))))))). '</div></body></html>';
+        echo $html; exit;
+    }
+    header('Location: /docs'); exit;
 }
 
 // Health — 无需 DB
