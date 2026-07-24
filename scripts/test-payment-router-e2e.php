@@ -81,10 +81,11 @@ $aRepo = new class($aSites) implements \Converge\Modules\PaymentRouter\Domain\AS
         return null;
     }
     public function findByTenant(int $tenantId): array { return $this->sites; }
-    public function save(ASite $site): void {
-        if ($site->id > 0) { foreach ($this->sites as $i => $s) { if ($s->id === $site->id) { $this->sites[$i] = $site; return; } } }
+    public function save(ASite $site): \Converge\Modules\PaymentRouter\Domain\ASite {
+        if ($site->id > 0) { foreach ($this->sites as $i => $s) { if ($s->id === $site->id) { $this->sites[$i] = $site; return $site; } } }
         $newId = count($this->sites) + 1;
-        $this->sites[] = new ASite($newId, $site->tenantId, $site->domain, $site->platform, $site->apiKey, $site->status);
+        $this->sites[] = $saved = new ASite($newId, $site->tenantId, $site->domain, $site->platform, $site->apiKey, $site->status);
+        return $saved;
     }
     public function delete(int $id): void {
         $this->sites = array_filter($this->sites, fn(ASite $s) => $s->id !== $id);
@@ -102,12 +103,13 @@ $bRepo = new class($bSites) implements \Converge\Modules\PaymentRouter\Domain\BS
         return array_values(array_filter($this->sites, fn(BSite $s) => $s->isAvailable()));
     }
     public function findByTenant(int $tenantId): array { return $this->sites; }
-    public function save(BSite $site): void {
-        foreach ($this->sites as $i => $s) { if ($s->id === $site->id) { $this->sites[$i] = $site; return; } }
+    public function save(BSite $site): \Converge\Modules\PaymentRouter\Domain\BSite {
+        foreach ($this->sites as $i => $s) { if ($s->id === $site->id) { $this->sites[$i] = $site; return $site; } }
         $newId = count($this->sites) + 1;
-        $this->sites[] = new BSite($newId, $site->tenantId, $site->domain, $site->paymentGateway,
+        $this->sites[] = $saved = new BSite($newId, $site->tenantId, $site->domain, $site->paymentGateway,
             $site->weight, $site->maxDailyOrders, $site->status, $site->cooledUntil,
             $site->consecutiveFailures, $site->dailyOrderCount);
+        return $saved;
     }
     public function resetDailyCounts(int $tenantId): void {
         foreach ($this->sites as $i => $s) {
@@ -133,10 +135,10 @@ $mRepo = new class($mappings) implements \Converge\Modules\PaymentRouter\Domain\
         return null;
     }
     public function findByTenant(int $tenantId, int $limit = 50, int $offset = 0): array { return $this->mappings; }
-    public function save(OrderMapping $mapping): void {
+    public function save(OrderMapping $mapping): \Converge\Modules\PaymentRouter\Domain\OrderMapping {
         if ($mapping->id > 0) {
             foreach ($this->mappings as $i => $m) {
-                if ($m->id === $mapping->id) { $this->mappings[$i] = $mapping; return; }
+                if ($m->id === $mapping->id) { $this->mappings[$i] = $mapping; return $mapping; }
             }
         }
         $newId = count($this->mappings) + 1;
@@ -145,6 +147,7 @@ $mRepo = new class($mappings) implements \Converge\Modules\PaymentRouter\Domain\
             $mapping->aSiteId, $mapping->bSiteId, $mapping->amount, $mapping->currency,
             $mapping->status, $mapping->routingReason, $mapping->dispatchedAt, $mapping->paidAt
         );
+    return $this->mappings[count($this->mappings)-1];
     }
 };
 
@@ -152,7 +155,7 @@ $mRepo = new class($mappings) implements \Converge\Modules\PaymentRouter\Domain\
 $gateway = new PaymentGatewayAdapter('e2e-test-secret');
 $selectGateway = new SelectGatewayUseCase($bRepo);
 $dispatchOrder = new DispatchOrderUseCase($aRepo, $bRepo, $mRepo, $selectGateway, $gateway);
-$handleWebhook = new HandlePaymentWebhookUseCase($mRepo, $bRepo, 3);
+$handleWebhook = new HandlePaymentWebhookUseCase($mRepo, $bRepo, $db, 3);
 $registerASite = new RegisterASiteUseCase($aRepo);
 $registerBSite = new RegisterBSiteUseCase($bRepo);
 $healthCheck = new HealthCheckUseCase($bRepo);

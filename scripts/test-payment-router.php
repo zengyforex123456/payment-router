@@ -191,11 +191,11 @@ function createMockBRepo(array &$sites): \Converge\Modules\PaymentRouter\Domain\
             return array_values(array_filter($this->sites, fn(BSite $s) => $s->isAvailable()));
         }
         public function findByTenant(int $tenantId): array { return $this->sites; }
-        public function save(BSite $site): void {
+        public function save(BSite $site): \Converge\Modules\PaymentRouter\Domain\BSite {
             foreach ($this->sites as $i => $s) {
-                if ($s->id === $site->id) { $this->sites[$i] = $site; return; }
+                if ($s->id === $site->id) { $this->sites[$i] = $site; return $site; }
             }
-            $this->sites[] = $site;
+            $this->sites[] = $site; return $site;
         }
         public function resetDailyCounts(int $tenantId): void {}
     };
@@ -277,9 +277,9 @@ $mockMappingRepo = new class($mockMappings) implements \Converge\Modules\Payment
         return null;
     }
     public function findByTenant(int $tenantId, int $limit = 50, int $offset = 0): array { return []; }
-    public function save(OrderMapping $mapping): void {
+    public function save(OrderMapping $mapping): \Converge\Modules\PaymentRouter\Domain\OrderMapping {
         foreach ($this->mappings as $i => $m) {
-            if ($m->id === $mapping->id) { $this->mappings[$i] = $mapping; return; }
+            if ($m->id === $mapping->id) { $this->mappings[$i] = $mapping; return $mapping; }
         }
         $this->mappings[] = $mapping;
     }
@@ -295,11 +295,11 @@ $mockBRepoForWebhook = new class($mockBSitesForWebhook) implements \Converge\Mod
     }
     public function findAvailable(int $tenantId): array { return []; }
     public function findByTenant(int $tenantId): array { return $this->sites; }
-    public function save(BSite $site): void {
+    public function save(BSite $site): \Converge\Modules\PaymentRouter\Domain\BSite {
         foreach ($this->sites as $i => $s) {
-            if ($s->id === $site->id) { $this->sites[$i] = $site; return; }
+            if ($s->id === $site->id) { $this->sites[$i] = $site; return $site; }
         }
-        $this->sites[] = $site;
+        $this->sites[] = $site; return $site;
     }
     public function resetDailyCounts(int $tenantId): void {}
 };
@@ -339,7 +339,7 @@ test('payment failure 3x: triggers BSite cooldown', function () use (&$mockMappi
     $mockBSitesForWebhook = [
         new BSite(1, 1, 'cool.example.com', 'paypal', 1, 100, 'active', null, 3), // already at threshold
     ];
-    $usecase = new \Converge\Modules\PaymentRouter\Application\HandlePaymentWebhookUseCase($mockMappingRepo, $mockBRepoForWebhook, 3);
+    $usecase = new \Converge\Modules\PaymentRouter\Application\HandlePaymentWebhookUseCase($mockMappingRepo, $mockBRepoForWebhook, null, 3);
     $result = $usecase->execute(['b_order_id' => 'B-003', 'status' => 'failed']);
     assertEq('failed', $result['mapping_status']);
     assertEq('cooled', $result['b_site_status']);

@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Converge\Modules\PaymentRouter\Application;
 
+use Converge\Contracts\DatabaseInterface;
 use Converge\Modules\PaymentRouter\Domain\BSiteRepositoryInterface;
 use Converge\Modules\PaymentRouter\Domain\OrderMappingRepositoryInterface;
 use RuntimeException;
@@ -18,14 +19,17 @@ final class HandlePaymentWebhookUseCase
     private OrderMappingRepositoryInterface $mappingRepo;
     private BSiteRepositoryInterface $bSiteRepo;
     private int $coolingThreshold;
+    private ?DatabaseInterface $db;
 
     public function __construct(
         OrderMappingRepositoryInterface $mappingRepo,
         BSiteRepositoryInterface $bSiteRepo,
+        ?DatabaseInterface $db = null,
         int $coolingThreshold = 3,
     ) {
         $this->mappingRepo = $mappingRepo;
         $this->bSiteRepo = $bSiteRepo;
+        $this->db = $db;
         $this->coolingThreshold = $coolingThreshold;
     }
 
@@ -55,7 +59,20 @@ final class HandlePaymentWebhookUseCase
         };
         $this->mappingRepo->save($updatedMapping);
 
-        // 3. 更新 B 站状态（自动冷却/恢复）
+        // 3. 从 DB 读取租户策略的冷却阈值（若 DB 不可用则用默认值）
+        $threshold = $this->coolingThreshold;
+        if ($this->db !== null) {
+            $tenantId = $mapping->tenantId;
+            $stmt = $this->db->prepare('SELECT cooling_threshold FROM payment_router_tenant_config WHERE tenant_id = ?');
+            $stmt->bind_param('i', $tenantId);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            if ($row && (int)$row['cooling_threshold'] > 0) {
+                $threshold = (int)$row['cooling_threshold'];
+            }
+        }
+
+        // 4. 更新 B 站状态（自动冷却/恢复）
         $bSite = $this->bSiteRepo->findById($mapping->bSiteId);
         $bSiteStatus = 'unchanged';
 
@@ -69,7 +86,7 @@ final class HandlePaymentWebhookUseCase
                     $bSite->dailyOrderCount
                 );
 
-                if ($updatedBSite->consecutiveFailures >= $this->coolingThreshold) {
+                if ($updatedBSite->consecutiveFailures >= $threshold) {
                     $updatedBSite = $updatedBSite->cool();
                     $bSiteStatus = 'cooled';
                 }

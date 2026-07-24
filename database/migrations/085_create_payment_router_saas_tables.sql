@@ -13,14 +13,14 @@ CREATE TABLE IF NOT EXISTS payment_router_tenant_config (
     updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 用量追踪 (每月1号通过 cron 重置 monthly_order_count)
+-- 用量追踪 (每月1号通过 cron 重置)
 CREATE TABLE IF NOT EXISTS payment_router_usage (
     tenant_id INT UNSIGNED NOT NULL,
-    year_month VARCHAR(7) NOT NULL COMMENT '格式 2026-07',
+    period VARCHAR(7) NOT NULL,
     dispatch_count INT UNSIGNED NOT NULL DEFAULT 0,
     paid_count INT UNSIGNED NOT NULL DEFAULT 0,
     failed_count INT UNSIGNED NOT NULL DEFAULT 0,
     total_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-    PRIMARY KEY (tenant_id, year_month),
-    INDEX idx_year_month (year_month)
+    PRIMARY KEY (tenant_id, period),
+    INDEX idx_period (period)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

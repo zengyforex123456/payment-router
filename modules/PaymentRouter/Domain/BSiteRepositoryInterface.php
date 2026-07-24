@@ -19,8 +19,8 @@ interface BSiteRepositoryInterface
     /** 列出某租户所有 B 站 */
     public function findByTenant(int $tenantId): array;
 
-    /** 保存（创建或更新） */
-    public function save(BSite $site): void;
+    /** 保存（创建或更新），返回带真实 ID 的实体 */
+    public function save(BSite $site): BSite;
 
     /** 重置所有 B 站的每日订单计数（定时任务调用） */
     public function resetDailyCounts(int $tenantId): void;

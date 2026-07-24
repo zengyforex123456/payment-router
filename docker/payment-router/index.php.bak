@@ -9,7 +9,7 @@
 declare(strict_types=1);
 
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
+ini_set('display_errors', '0');
 
 // ── 国际化 ──
 require_once __DIR__ . '/../../modules/PaymentRouter/I18n/Lang.php';
@@ -72,7 +72,7 @@ function svc(string $name): object {
     $gw    = $container['gw']    ??= new \Converge\Modules\PaymentRouter\Infrastructure\PaymentGatewayAdapter($secret);
     $sg    = $container['sg']    ??= new \Converge\Modules\PaymentRouter\Application\SelectGatewayUseCase($bRepo);
     $do    = $container['do']    ??= new \Converge\Modules\PaymentRouter\Application\DispatchOrderUseCase($aRepo, $bRepo, $mRepo, $sg, $gw);
-    $hw    = $container['hw']    ??= new \Converge\Modules\PaymentRouter\Application\HandlePaymentWebhookUseCase($mRepo, $bRepo, svc('db'));
+    $hw    = $container['hw']    ??= new \Converge\Modules\PaymentRouter\Application\HandlePaymentWebhookUseCase($mRepo, $bRepo);
     $ra    = $container['ra']    ??= new \Converge\Modules\PaymentRouter\Application\RegisterASiteUseCase($aRepo);
     $rb    = $container['rb']    ??= new \Converge\Modules\PaymentRouter\Application\RegisterBSiteUseCase($bRepo);
     $hc    = $container['hc']    ??= new \Converge\Modules\PaymentRouter\Application\HealthCheckUseCase($bRepo);

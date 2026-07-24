@@ -157,7 +157,8 @@ final class TrialManagerUseCase
                  ON DUPLICATE KEY UPDATE tier=VALUES(tier), expires_at=VALUES(expires_at)"
             );
             $sig = hash_hmac('sha256', "{$licenseKey}:*:{$newTier}:" . date('Y-m-d', strtotime('+1 year')), $_ENV['APP_SECRET'] ?? 'change-me');
-            $stmt2->bind_param('ssss', $licenseKey, '*', $newTier, $sig);
+            $star = '*';
+            $stmt2->bind_param('ssss', $licenseKey, $star, $newTier, $sig);
             $stmt2->execute();
         }
 

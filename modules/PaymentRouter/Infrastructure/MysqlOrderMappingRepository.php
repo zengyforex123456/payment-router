@@ -70,7 +70,7 @@ final class MysqlOrderMappingRepository implements OrderMappingRepositoryInterfa
         return $mappings;
     }
 
-    public function save(OrderMapping $mapping): void
+    public function save(OrderMapping $mapping): OrderMapping
     {
         $id = $mapping->id; $tid = $mapping->tenantId; $ao = $mapping->aOrderId;
         $bo = $mapping->bOrderId; $as = $mapping->aSiteId; $bs = $mapping->bSiteId;
@@ -80,13 +80,19 @@ final class MysqlOrderMappingRepository implements OrderMappingRepositoryInterfa
         if ($mapping->id > 0) {
             $stmt = $this->db->prepare('UPDATE payment_router_order_mappings SET b_order_id=?, status=?, paid_at=? WHERE id=?');
             $stmt->bind_param('sssi', $bo, $st, $pa, $id);
-        } else {
-            $stmt = $this->db->prepare('INSERT INTO payment_router_order_mappings (tenant_id, a_order_id, b_order_id, a_site_id, b_site_id, amount, currency, status, routing_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            $stmt->bind_param('issiidsss', $tid, $ao, $bo, $as, $bs, $amt, $cur, $st, $rr);
+            if (!$stmt->execute()) {
+                throw new \RuntimeException('DB: ' . $stmt->error . ' [status=' . var_export($st, true) . ']');
+            }
+            return $mapping;
         }
+        $stmt = $this->db->prepare('INSERT INTO payment_router_order_mappings (tenant_id, a_order_id, b_order_id, a_site_id, b_site_id, amount, currency, status, routing_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->bind_param('issiidsss', $tid, $ao, $bo, $as, $bs, $amt, $cur, $st, $rr);
         if (!$stmt->execute()) {
             throw new \RuntimeException('DB: ' . $stmt->error . ' [status=' . var_export($st, true) . ']');
         }
+        return new OrderMapping(
+            (int)$this->db->lastInsertId(), $tid, $ao, $bo, $as, $bs, $amt, $cur, $st, $rr, date('Y-m-d H:i:s'), null
+        );
     }
 
     private function hydrate(array $row): OrderMapping

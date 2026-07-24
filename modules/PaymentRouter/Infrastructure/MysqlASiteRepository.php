@@ -56,7 +56,7 @@ final class MysqlASiteRepository implements ASiteRepositoryInterface
         return $sites;
     }
 
-    public function save(ASite $site): void
+    public function save(ASite $site): ASite
     {
         $id = $site->id; $tid = $site->tenantId; $dom = $site->domain;
         $plat = $site->platform; $key = $site->apiKey; $st = $site->status;
@@ -64,11 +64,13 @@ final class MysqlASiteRepository implements ASiteRepositoryInterface
         if ($site->id > 0) {
             $stmt = $this->db->prepare('UPDATE payment_router_a_sites SET domain=?, platform=?, status=? WHERE id=?');
             $stmt->bind_param('sssi', $dom, $plat, $st, $id);
-        } else {
-            $stmt = $this->db->prepare('INSERT INTO payment_router_a_sites (tenant_id, domain, platform, api_key, status) VALUES (?, ?, ?, ?, ?)');
-            $stmt->bind_param('issss', $tid, $dom, $plat, $key, $st);
+            $stmt->execute();
+            return $site;
         }
+        $stmt = $this->db->prepare('INSERT INTO payment_router_a_sites (tenant_id, domain, platform, api_key, status) VALUES (?, ?, ?, ?, ?)');
+        $stmt->bind_param('issss', $tid, $dom, $plat, $key, $st);
         $stmt->execute();
+        return new ASite($this->db->lastInsertId(), $tid, $dom, $plat, $key, $st);
     }
 
     public function delete(int $id): void

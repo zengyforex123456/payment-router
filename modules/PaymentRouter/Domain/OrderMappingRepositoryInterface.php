@@ -22,6 +22,6 @@ interface OrderMappingRepositoryInterface
     /** 列出某租户的映射记录（分页） */
     public function findByTenant(int $tenantId, int $limit = 50, int $offset = 0): array;
 
-    /** 保存 */
-    public function save(OrderMapping $mapping): void;
+    /** 保存，返回带真实 ID 的实体 */
+    public function save(OrderMapping $mapping): OrderMapping;
 }

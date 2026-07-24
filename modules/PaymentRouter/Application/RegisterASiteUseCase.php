@@ -23,8 +23,6 @@ final class RegisterASiteUseCase
     public function execute(int $tenantId, string $domain, string $platform = 'woocommerce'): ASite
     {
         $site = new ASite(0, $tenantId, $domain, $platform);
-        $this->aSiteRepo->save($site);
-
-        return $site;
+        return $this->aSiteRepo->save($site);
     }
 }

@@ -28,8 +28,6 @@ final class RegisterBSiteUseCase
         int $maxDailyOrders = 50,
     ): BSite {
         $site = new BSite(0, $tenantId, $domain, $paymentGateway, $weight, $maxDailyOrders);
-        $this->bSiteRepo->save($site);
-
-        return $site;
+        return $this->bSiteRepo->save($site);
     }
 }

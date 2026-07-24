@@ -43,11 +43,11 @@ final class GetTenantUsageUseCase
         $usage->bSiteCount = (int)$stmt3->get_result()->fetch_assoc()['cnt'];
 
         // 当月订单数
-        $yearMonth = date('Y-m');
+        $period = date('Y-m');
         $stmt4 = $this->db->prepare(
-            'SELECT dispatch_count FROM payment_router_usage WHERE tenant_id = ? AND year_month = ?'
+            'SELECT dispatch_count FROM payment_router_usage WHERE tenant_id = ? AND period = ?'
         );
-        $stmt4->bind_param('is', $tenantId, $yearMonth);
+        $stmt4->bind_param('is', $tenantId, $period);
         $stmt4->execute();
         $row4 = $stmt4->get_result()->fetch_assoc();
         $usage->monthlyOrderCount = $row4 ? (int)$row4['dispatch_count'] : 0;

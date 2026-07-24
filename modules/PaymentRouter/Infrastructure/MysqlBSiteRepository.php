@@ -66,7 +66,7 @@ final class MysqlBSiteRepository implements BSiteRepositoryInterface
         return $sites;
     }
 
-    public function save(BSite $site): void
+    public function save(BSite $site): BSite
     {
         $id = $site->id; $tid = $site->tenantId; $dom = $site->domain;
         $gw = $site->paymentGateway; $w = $site->weight; $md = $site->maxDailyOrders;
@@ -74,27 +74,17 @@ final class MysqlBSiteRepository implements BSiteRepositoryInterface
         $cf = $site->consecutiveFailures; $dc = $site->dailyOrderCount;
 
         if ($site->id > 0) {
-            // Use a simpler update query — NULL-safe handling
             $sql = 'UPDATE payment_router_b_sites SET domain=?, payment_gateway=?, weight=?, max_daily_orders=?, status=?, consecutive_failures=?, daily_order_count=?';
-            $params = [$dom, $gw, $w, $md, $st, $cf, $dc];
-            $types = 'ssiisii'; // domain(s),gateway(s),weight(i),max_daily(i),status(s),failures(i),daily(i)
-            if ($cu !== null) {
-                $sql .= ', cooled_until=?';
-                $types .= 's';
-                $params[] = $cu;
-            } else {
-                $sql .= ', cooled_until=NULL';
-            }
-            $sql .= ' WHERE id=?';
-            $types .= 'i';
-            $params[] = $id;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param($types, ...$params);
-        } else {
-            $stmt = $this->db->prepare('INSERT INTO payment_router_b_sites (tenant_id, domain, payment_gateway, weight, max_daily_orders, status) VALUES (?, ?, ?, ?, ?, ?)');
-            $stmt->bind_param('issiis', $tid, $dom, $gw, $w, $md, $st);
+            $params = [$dom, $gw, $w, $md, $st, $cf, $dc]; $types = 'ssiisii';
+            if ($cu !== null) { $sql .= ', cooled_until=?'; $types .= 's'; $params[] = $cu; }
+            else { $sql .= ', cooled_until=NULL'; }
+            $sql .= ' WHERE id=?'; $types .= 'i'; $params[] = $id;
+            $stmt = $this->db->prepare($sql); $stmt->bind_param($types, ...$params); $stmt->execute();
+            return $site;
         }
-        $stmt->execute();
+        $stmt = $this->db->prepare('INSERT INTO payment_router_b_sites (tenant_id, domain, payment_gateway, weight, max_daily_orders, status) VALUES (?, ?, ?, ?, ?, ?)');
+        $stmt->bind_param('issiis', $tid, $dom, $gw, $w, $md, $st); $stmt->execute();
+        return new BSite($this->db->lastInsertId(), $tid, $dom, $gw, $w, $md, $st);
     }
 
     public function resetDailyCounts(int $tenantId): void

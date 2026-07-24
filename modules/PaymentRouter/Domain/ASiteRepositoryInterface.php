@@ -19,8 +19,8 @@ interface ASiteRepositoryInterface
     /** 列出某租户所有 A 站 */
     public function findByTenant(int $tenantId): array;
 
-    /** 保存（创建或更新） */
-    public function save(ASite $site): void;
+    /** 保存（创建或更新），返回带真实 ID 的实体 */
+    public function save(ASite $site): ASite;
 
     /** 删除 */
     public function delete(int $id): void;

@@ -58,6 +58,6 @@ final class SuperAdminDashboardUseCase
             'revenue_today' => array_sum(array_column($tenants, 'revenue_today')),
         ];
 
-        return compact('tenants', 'summary');
+        return ['tenants' => $tenants, 'summary' => $total];
     }
 }

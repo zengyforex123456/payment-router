@@ -150,8 +150,8 @@ $bRepo = new class($sites) implements \Converge\Modules\PaymentRouter\Domain\BSi
     public function findById(int $id): ?BSite { foreach($this->s as $b) if($b->id===$id) return $b; return null; }
     public function findAvailable(int $tid): array { return array_values(array_filter($this->s, fn(BSite $b) => $b->isAvailable())); }
     public function findByTenant(int $tid): array { return $this->s; }
-    public function save(BSite $site): void {
-        foreach($this->s as $i=>$b) if($b->id===$site->id) { $this->s[$i]=$site; return; }
+    public function save(BSite $site): \Converge\Modules\PaymentRouter\Domain\BSite {
+        foreach($this->s as $i=>$b) if($b->id===$site->id) { $this->s[$i]=$site; return $site; }
         $this->s[] = $site;
     }
     public function resetDailyCounts(int $tid): void {}
@@ -169,8 +169,8 @@ test('Balanced strategy: weighted routing with 3 B-Sites', function() use ($bRep
         public function findById(int $id): ?BSite { foreach($this->s as $b) if($b->id===$id) return $b; return null; }
         public function findAvailable(int $tid): array { return array_values(array_filter($this->s, fn(BSite $b) => $b->isAvailable())); }
         public function findByTenant(int $tid): array { return $this->s; }
-        public function save(BSite $site): void {
-            foreach($this->s as $i=>$b) if($b->id===$site->id) { $this->s[$i]=$site; return; }
+        public function save(BSite $site): \Converge\Modules\PaymentRouter\Domain\BSite {
+            foreach($this->s as $i=>$b) if($b->id===$site->id) { $this->s[$i]=$site; return $site; }
             $this->s[] = $site;
         }
         public function resetDailyCounts(int $tid): void {}
@@ -193,8 +193,8 @@ test('Safe mode: round_robin with 1-failure cooldown', function() {
         public function findById(int $id): ?BSite { foreach($this->s as $b) if($b->id===$id) return $b; return null; }
         public function findAvailable(int $tid): array { return array_values(array_filter($this->s, fn(BSite $b) => $b->isAvailable())); }
         public function findByTenant(int $tid): array { return $this->s; }
-        public function save(BSite $site): void {
-            foreach($this->s as $i=>$b) if($b->id===$site->id) { $this->s[$i]=$site; return; }
+        public function save(BSite $site): \Converge\Modules\PaymentRouter\Domain\BSite {
+            foreach($this->s as $i=>$b) if($b->id===$site->id) { $this->s[$i]=$site; return $site; }
             $this->s[] = $site;
         }
         public function resetDailyCounts(int $tid): void {}
