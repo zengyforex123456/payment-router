@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PaymentRouter — 多站轮询支付中控</title>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PaymentRouter — Cloak + AB轮询支付一体化 | 唯一三级交付</title>
 <style>
 :root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--success:#22c55e;--radius:12px}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
@@ -27,19 +27,19 @@
 <nav class="nav"><a href="/" class="logo">💳 PaymentRouter</a><div><a href="#features">功能</a><a href="#pricing">定价</a><a href="/login">登录</a><a href="/register" class="btn btn-primary" style="padding:8px 20px;font-size:14px">免费试用</a></div></nav>
 
 <section class="hero">
-<h1>一个中控，多个收款站<br>分散风险，稳定收款</h1>
-<p>将支付请求智能分发到多个 OpenCart B 站，规避单一 PayPal/Stripe 账户冻结导致的全盘停摆。开源免费起步，按需升级。</p>
-<div><a href="/register" class="btn btn-primary">免费试用 14 天</a><a href="#pricing" class="btn btn-outline">查看定价</a></div>
+<h1>唯一 Cloak + AB轮询支付<br>一体化解决方案</h1>
+<p>不是拼凑两个工具——是一个中控同时解决<strong>广告过审</strong>和<strong>收款安全</strong>。比 TrafficArmor 多了支付路由, 比店匠/SHOPYY 多了源码自主。开源免费起步, 三级交付按需升级。</p>
+<div><a href="/register" class="btn btn-primary">免费试用 14 天</a><a href="/checkout" class="btn btn-outline">直接购买</a><a href="#compare" class="btn btn-outline">vs 竞品对比</a></div>
 </section>
 
-<section id="features" class="features"><h2>核心能力</h2>
+<section id="features" class="features"><h2>为什么选 PaymentRouter？</h2>
 <div class="grid3">
-<div class="feat-card"><div class="feat-icon">🔀</div><h3>智能轮询分发</h3><p>4 种路由策略：加权随机、轮询、金额阈值、纯随机。自动选择最优 B 站完成收款。</p></div>
-<div class="feat-card"><div class="feat-icon">🛡️</div><h3>自动冷却恢复</h3><p>B 站连续失败自动冷却，冷却结束自动恢复。Safe Mode 下 1 次失败即切换，养号期无忧。</p></div>
-<div class="feat-card"><div class="feat-icon">📊</div><h3>实时仪表盘</h3><p>各 B 站状态、成功率趋势、7 天图表一目了然。Telegram/Slack 告警，异常秒级通知。</p></div>
-<div class="feat-card"><div class="feat-icon">🔐</div><h3>HMAC + JWT 双签名</h3><p>A 站→中控 HMAC 防伪造，中控→B 站 JWT 5 分钟时效防重放，Webhook 回调闭环。</p></div>
-<div class="feat-card"><div class="feat-icon">🐳</div><h3>一键部署</h3><p>Docker Compose 一行命令启动。也支持手动安装 + systemd 服务。源码买断，数据自主。</p></div>
-<div class="feat-card"><div class="feat-icon">🌐</div><h3>中英双语</h3><p>管理面板 + API 错误消息完整支持中文和英文，自动检测浏览器语言。</p></div>
+<div class="feat-card"><div class="feat-icon">🔀🛡️</div><h3>Cloak + 支付路由 二合一</h3><p>一个中控完成两件事。TrafficArmor 只做 Cloak ($129/月), 我们 Cloak+支付 ($149/月)。不拼凑工具, 一个就够了。</p></div>
+<div class="feat-card"><div class="feat-icon">🧠</div><h3>AI 行为分析 + 动态内容</h3><p>从"你是谁"升级到"你想干什么"。审核员和客户行为模式不同——我们根据停留/滚动/点击自动判定。独家 DCD 动态替换敏感词, 零误杀。</p></div>
+<div class="feat-card"><div class="feat-icon">📦</div><h3>三级交付: SaaS · 源码 · 企业</h3><p>1行JS零门槛接入 → $800源码自主 → 企业全包。TrafficArmor 只做SaaS, 店匠只绑平台——我们覆盖所有客户。</p></div>
+<div class="feat-card"><div class="feat-icon">🔓</div><h3>开源社区版免费</h3><p>核心引擎 Apache 2.0 开源。GitHub 可查, 不用担心"源码后门"。竞品无一家开源。</p></div>
+<div class="feat-card"><div class="feat-icon">🔌</div><h3>不绑定任何平台</h3><p>适配 WordPress/WooCommerce, OpenCart, Magento, Shopify。店匠/SHOPYY/Fecify 绑自有建站, 我们独立中控。</p></div>
+<div class="feat-card"><div class="feat-icon">💳</div><h3>三种支付, 全球收款</h3><p>Stripe (信用卡) + Paddle (PayPal) + USDT (加密货币)。竞品支付方式单一, TrafficArmor 甚至只收虚拟币。</p></div>
 </div></section>
 
 <section id="pricing" class="pricing"><h2>简单定价</h2><p>从免费开始，按需升级。所有版本包含核心路由引擎。</p>
@@ -50,6 +50,28 @@
 </div>
 <div style="margin-top:24px"><a href="/register" class="btn btn-outline">🏢 企业版 $2,500+ — 不限站点 · DSL 路由 · OEM · 专属支持</a></div></section>
 
-<section class="cta"><h2>准备好稳定收款了吗？</h2><p>14 天全功能免费试用，无需信用卡。随时取消。</p><a href="/register" class="btn btn-primary">免费开始</a></section>
+<section id="compare" class="features"><h2>vs 竞品一览</h2>
+<div style="max-width:800px;margin:0 auto;overflow-x:auto">
+<table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:40px">
+<thead><tr style="border-bottom:2px solid var(--border)">
+<th style="padding:10px;text-align:left">能力</th>
+<th style="padding:10px;text-align:center;background:rgba(59,130,246,.1)">PaymentRouter</th>
+<th style="padding:10px;text-align:center">TrafficArmor</th>
+<th style="padding:10px;text-align:center">店匠/SHOPYY</th>
+<th style="padding:10px;text-align:center">Keitaro</th>
+</tr></thead>
+<tbody style="color:var(--muted)">
+<tr><td style="padding:8px">Cloak 斗篷</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center">⚠️</td><td style="text-align:center">⚠️</td></tr>
+<tr><td style="padding:8px">AB 支付路由</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--danger)">❌</td></tr>
+<tr><td style="padding:8px">SaaS 零门槛</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--danger)">❌</td></tr>
+<tr><td style="padding:8px">源码买断</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--success)">✅</td></tr>
+<tr><td style="padding:8px">开源</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--danger)">❌</td></tr>
+<tr><td style="padding:8px">不绑定建站平台</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--success)">✅</td></tr>
+<tr><td style="padding:8px">AI 行为分析</td><td style="text-align:center;color:var(--success)">✅</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--danger)">❌</td><td style="text-align:center;color:var(--danger)">❌</td></tr>
+<tr><td style="padding:8px">起步价格</td><td style="text-align:center;color:var(--text);font-weight:600">免费/$$149</td><td style="text-align:center">$129</td><td style="text-align:center">建站费+白名单</td><td style="text-align:center">$49</td></tr>
+</tbody></table>
+</div></section>
+
+<section class="cta"><h2>一个中控, 两项能力, 三级交付</h2><p>14 天全功能免费试用, 无需信用卡。比起拼凑 TrafficArmor + 店匠, 一个 PaymentRouter 就够了。</p><a href="/register" class="btn btn-primary">免费开始</a> <a href="/checkout" class="btn btn-primary" style="background:var(--success);margin-left:12px">直接购买</a></section>
 <footer class="footer"><p>&copy; 2026 PaymentRouter · <a href="/terms" style="color:var(--muted)">Terms</a> · <a href="/privacy" style="color:var(--muted)">Privacy</a> · <a href="/refund" style="color:var(--muted)">Refund</a> · <a href="mailto:support@paymentrouter.vip" style="color:var(--muted)">Contact</a></p></footer>
 </div></body></html>
