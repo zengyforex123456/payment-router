@@ -40,19 +40,27 @@ final class BillingManagerUseCase
         $product = self::PRODUCTS[$productId] ?? throw new \RuntimeException("未知产品: {$productId}");
         $stripeKey = $this->config['stripe_secret_key'] ?? '';
 
+        $isSubscription = $product['interval'] === 'month' || $product['interval'] === 'year';
+        $mode = $isSubscription ? 'subscription' : 'payment';
+
+        $priceData = [
+            'currency'    => $product['currency'],
+            'product_data'=> [
+                'name'     => "PaymentRouter " . ucfirst($product['tier']),
+                'tax_code' => 'txcd_10000000',
+            ],
+            'unit_amount' => $product['amount'],
+        ];
+        if ($isSubscription) {
+            $priceData['recurring'] = ['interval' => $product['interval']];
+        }
+
         $sessionData = [
             'line_items' => [[
-                'price_data' => [
-                    'currency'    => $product['currency'],
-                    'product_data'=> [
-                        'name'     => "PaymentRouter " . ucfirst($product['tier']),
-                        'tax_code' => 'txcd_10000000',
-                    ],
-                    'unit_amount' => $product['amount'],
-                ],
+                'price_data' => $priceData,
                 'quantity' => 1,
             ]],
-            'mode'          => 'payment',
+            'mode'          => $mode,
             'success_url'   => ($this->config['base_url'] ?? '') . '/admin?payment=success',
             'cancel_url'    => ($this->config['base_url'] ?? '') . '/admin?payment=cancel',
             'metadata'      => [
@@ -115,18 +123,35 @@ final class BillingManagerUseCase
         }
 
         $event = json_decode($rawBody, true);
-        if (!$event || ($event['type'] ?? '') !== 'checkout.session.completed') {
-            return ['error' => '无效事件'];
+        if (!$event) return ['error' => '无效JSON'];
+
+        $type = $event['type'] ?? '';
+        $session = $event['data']['object'] ?? [];
+        $metadata = $session['metadata'] ?? [];
+
+        // 处理支付成功
+        if ($type === 'checkout.session.completed' || $type === 'invoice.paid') {
+            return $this->activateLicense(
+                (int)($metadata['tenant_id'] ?? 0),
+                $metadata['product_id'] ?? '',
+                $metadata['domain'] ?? '',
+                $session['id'] ?? '',
+                'stripe',
+                $session['amount_total'] ?? 0
+            );
         }
 
-        $session = $event['data']['object'];
-        $metadata = $session['metadata'] ?? [];
-        $tenantId = (int)($metadata['tenant_id'] ?? 0);
-        $productId = $metadata['product_id'] ?? '';
-        $domain = $metadata['domain'] ?? '';
+        // 处理退款
+        if ($type === 'charge.refunded') {
+            $tenantId = (int)($metadata['tenant_id'] ?? 0);
+            $stmt = $this->db->prepare("UPDATE payment_router_payments SET status='refunded' WHERE tx_id=?");
+            $txId = $session['id'] ?? '';
+            $stmt->bind_param('s', $txId);
+            $stmt->execute();
+            return ['refunded' => true, 'tx_id' => $txId];
+        }
 
-        // 自动激活
-        return $this->activateLicense($tenantId, $productId, $domain, $session['id'] ?? '', 'stripe', $session['amount_total'] ?? 0);
+        return ['error' => "未处理的事件类型: {$type}"];
     }
 
     /**
