@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>购买 PaymentRouter</title>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--success:#22c55e;--radius:12px}*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}.container{max-width:1000px;margin:0 auto;padding:40px 24px}h1{font-size:28px;text-align:center;margin-bottom:40px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px 24px;text-align:center}.card h3{font-size:20px;margin-bottom:8px}.price{font-size:40px;font-weight:800;margin:16px 0}.price span{font-size:14px;color:var(--muted);font-weight:400}ul{list-style:none;text-align:left;margin:20px 0;font-size:14px}li{padding:6px 0;color:var(--muted)}li::before{content:"✓ ";color:var(--success)}.btn{display:block;padding:12px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;border:none;text-decoration:none;margin-top:16px;text-align:center}.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#2563eb}.featured{border-color:var(--primary);border-width:2px;position:relative}.featured::before{content:"推荐";position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;padding:2px 16px;border-radius:10px;font-size:12px}.back{text-align:center;margin-top:32px;font-size:13px;color:var(--muted)}.back a{color:var(--primary)}.checkout-url{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;font-family:monospace;font-size:12px;word-break:break-all;color:var(--success);display:none}.email-input{width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;margin-bottom:12px}.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:768px){.grid3{grid-template-columns:1fr}}</style></head><body>
+<div class="container">
+<h1>选择适合你的方案</h1>
+
+<div class="grid3">
+  <div class="card">
+    <h3>🌱 入门版</h3>
+    <div class="price">$149<span>/月</span></div>
+    <ul><li>1 A站 + 2 B站</li><li>全部 4 种策略</li><li>实时仪表盘</li><li>SaaS 托管</li><li>14 天免费试用</li></ul>
+    <button class="btn btn-primary" onclick="checkout('starter_monthly')">$149/月 订阅</button>
+  </div>
+  <div class="card featured">
+    <h3>💼 专业版</h3>
+    <div class="price">$800<span> 买断</span></div>
+    <ul><li>2 A站 + 5 B站</li><li>完整源码</li><li>自定义策略</li><li>本地部署</li><li>1 年更新 + 支持</li></ul>
+    <input class="email-input" id="email" type="email" placeholder="你的邮箱 (用于接收 License)" required>
+    <input class="email-input" id="domain" type="text" placeholder="绑定域名 (如 my-shop.com)">
+    <button class="btn btn-primary" onclick="checkout('pro_onetime')">$800 买断</button>
+  </div>
+  <div class="card">
+    <h3>🏢 企业版</h3>
+    <div class="price">$2,500<span> 起</span></div>
+    <ul><li>不限 A/B 站</li><li>DSL 路由脚本</li><li>OEM 白标</li><li>专属支持</li><li>SLA 99.9%</li></ul>
+    <button class="btn btn-primary" onclick="checkout('enterprise_onetime')">$2,500 买断</button>
+  </div>
+</div>
+
+<div id="result" class="checkout-url"></div>
+<p class="back"><a href="/">← 返回首页</a> · <a href="/docs">文档</a> · 14 天免费试用无需信用卡</p>
+</div>
+
+<script>
+async function checkout(productId) {
+  var email = document.getElementById('email')?.value || '';
+  var domain = document.getElementById('domain')?.value || '';
+  var resultEl = document.getElementById('result');
+  var btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>跳转中...';
+
+  try {
+    var resp = await fetch('/api/payment-router/billing/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: 0, product_id: productId, domain: domain, email: email })
+    });
+    var data = await resp.json();
+    if (data.checkout_url) {
+      window.location.href = data.checkout_url;
+    } else {
+      resultEl.style.display = 'block';
+      resultEl.textContent = '错误: ' + (data.error || '请稍后重试');
+      btn.disabled = false;
+      btn.innerHTML = '重试';
+    }
+  } catch(e) {
+    resultEl.style.display = 'block';
+    resultEl.textContent = '网络错误, 请检查 API 是否运行';
+    btn.disabled = false;
+    btn.innerHTML = '重试';
+  }
+}
+</script>
+</body></html>
