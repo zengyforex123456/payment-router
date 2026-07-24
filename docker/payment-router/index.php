@@ -95,6 +95,11 @@ function svc(string $name): object {
     $lic    = $container['lic']    ??= new \Converge\Modules\PaymentRouter\Application\LicenseManagerUseCase(svc('db'), getenv('APP_SECRET') ?: 'change-me');
     $trial  = $container['trial']  ??= new \Converge\Modules\PaymentRouter\Application\TrialManagerUseCase(svc('db'), 14);
     $auth   = $container['auth']   ??= new \Converge\Modules\PaymentRouter\Application\AuthUseCase(svc('db'));
+    $paddle = $container['paddle'] ??= new \Converge\Modules\PaymentRouter\Application\PaddleFulfillmentUseCase(svc('db'), [
+        'paddle_api_key'         => getenv('PADDLE_API_KEY') ?: '',
+        'paddle_webhook_secret'  => getenv('PADDLE_WEBHOOK_SECRET') ?: '',
+        'paddle_environment'     => getenv('PADDLE_ENVIRONMENT') ?: 'sandbox',
+    ]);
     $bill   = $container['billing'] ??= new \Converge\Modules\PaymentRouter\Application\BillingManagerUseCase(svc('db'), [
         'stripe_secret_key'      => getenv('STRIPE_SECRET_KEY') ?: '',
         'stripe_webhook_secret'  => getenv('STRIPE_WEBHOOK_SECRET') ?: '',
@@ -338,8 +343,21 @@ try {
             => svc('billing')->createCryptoCheckout((int)($body['tenant_id'] ?? 0), $body['product_id'] ?? '', $body['domain'] ?? ''),
         $method === 'POST' && $path === '/api/payment-router/billing/paddle/checkout'
             => svc('billing')->createPaddleCheckout((int)($body['tenant_id'] ?? 0), $body['product_id'] ?? ''),
-        $method === 'POST' && $path === '/api/payment-router/billing/webhook/paddle'
-            => (function() { $raw=file_get_contents('php://input'); $data=json_decode($raw,true)?:[]; $type=$data['event_type']??''; if($type==='transaction.completed')return svc('billing')->activateLicense((int)($data['data']['custom_data']['tenant_id']??0),$data['data']['custom_data']['product_id']??'','*',$data['data']['id']??'','paddle',(int)(($data['data']['details']['totals']['subtotal']??'0')*100)); return ['status'=>'pending']; })(),
+        // Paddle Webhook (verified + idempotent)
+        $method === 'POST' && $path === '/api/payment-router/webhook/paddle'
+            => (function() {
+                $raw = file_get_contents('php://input');
+                $sig = $_SERVER['HTTP_PADDLE_SIGNATURE'] ?? '';
+                $event = svc('paddle')->verifyWebhook($raw, $sig);
+                if (!$event) { http_response_code(401); return ['error' => 'Signature verification failed']; }
+                return svc('paddle')->handleEvent($event);
+            })(),
+        // Paddle Customer Portal
+        $method === 'POST' && $path === '/api/payment-router/portal'
+            => svc('paddle')->createPortalSession($body['customer_id'] ?? ''),
+        // Paddle access check
+        $method === 'GET' && $path === '/api/payment-router/access'
+            => ['has_access' => svc('paddle')->hasAccess($body['customer_id'] ?? '')],
         $method === 'POST' && $path === '/api/payment-router/billing/webhook/crypto'
             => svc('billing')->handleCryptoWebhook(file_get_contents('php://input')),
         $method === 'POST' && $path === '/api/payment-router/billing/crypto/confirm'
