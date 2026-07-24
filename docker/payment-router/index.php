@@ -146,7 +146,8 @@ if ($path === '/embed.js') {
 // Serve static pages
 $staticPages = ['/' => 'index.html', '/login' => 'login.html', '/register' => 'register.html',
     '/app' => 'app.html', '/admin' => 'admin.html', '/pricing' => 'pricing.html', '/docs' => 'docs.html',
-    '/checkout' => 'checkout.html', '/welcome' => 'welcome.html'];
+    '/checkout' => 'checkout.html', '/welcome' => 'welcome.html',
+    '/terms' => 'terms.html', '/privacy' => 'privacy.html', '/refund' => 'refund.html'];
 foreach ($staticPages as $p => $f) {
     if ($path === $p) { header('Content-Type: text/html; charset=utf-8'); readfile(__DIR__ . '/../../public/' . $f); exit; }
 }
