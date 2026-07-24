@@ -377,6 +377,14 @@ try {
             => svc('admin')->execute(),
         $method === 'GET' && $path === '/api/payment-router/presets'
             => array_map(fn($p) => $p->toArray(), \Converge\Modules\PaymentRouter\Domain\StrategyTemplate::presets()),
+        $method === 'POST' && $path === '/api/payment-router/cron/daily'
+            => (function() {
+                svc('bRepo')->resetDailyCounts(0);
+                svc('recon')->execute(0);
+                $s = svc('db')->prepare("UPDATE payment_router_order_mappings SET status='failed' WHERE status='pending' AND dispatched_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+                $s->execute();
+                return ['reset'=>true,'reconciled'=>true,'stale_marked_failed'=>svc('db')->affectedRows(),'time'=>date('c')];
+            })(),
         $method === 'POST' && $path === '/api/payment-router/health-check'
             => svc('hc')->execute((int)($body['tenant_id'] ?? 0)),
 
