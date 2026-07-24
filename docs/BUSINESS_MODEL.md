@@ -184,7 +184,21 @@ Year 3:    SaaS 48% | Source 15% | Enterprise 12% | 年费续费 25%
 
 ---
 
-## 六、竞品定位图
+## 六、Cloak + 支付竞品全景
+
+| 竞品 | 类型 | 部署 | 交付 | 定价 | Cloak | 支付路由 |
+|------|------|:---:|------|------|:---:|:---:|
+| **TrafficArmor** | 纯 Cloak | SaaS | JS 1行 | $129-599/月 | ✅ | ❌ |
+| **NoIpFraud** | 纯 Cloak | SaaS | JS/PHP | $500注册+$197/月 | ✅ | ❌ |
+| **FraudFilter** | 纯 Cloak | SaaS | JS/PHP/WP | $199/月 | ✅ | ❌ |
+| **Keitaro** | Tracker | 自部署 | License | $49-139/月 | ⚠️ 辅助 | ❌ |
+| **Blackhole** | 纯 Cloak | SaaS | JS | $25/月 | ✅ | ❌ |
+| **Zeustrak** | 纯 Cloak | SaaS | JS | €399/月 | ✅ | ❌ |
+| **PaymentRouter** | **Cloak+支付** | **SaaS/源码/企业** | **JS+WP+OC** | **$149月/$800买断** | ✅ | **✅** |
+
+**唯一**: Cloak + 支付路由一体化 + 三级交付。TrafficArmor 只做 Cloak，Keitaro 只做 Tracker，没有竞品同时覆盖两者。
+
+## 七、竞品定位图
 
 ```
             高价 ($2000+)
