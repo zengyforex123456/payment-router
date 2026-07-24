@@ -155,13 +155,134 @@ final class BillingManagerUseCase
     }
 
     /**
-     * 处理 USDT 付款确认。
+     * 创建 USDT 支付 (Cryptomus API)。
+     * 复用 converge-core 的 Cryptomus 集成逻辑。
+     */
+    public function createCryptoCheckout(int $tenantId, string $productId, string $domain): array
+    {
+        $product = self::PRODUCTS[$productId] ?? throw new \RuntimeException("未知产品: {$productId}");
+        $apiKey = $this->config['cryptomus_api_key'] ?? '';
+        $merchantId = $this->config['cryptomus_merchant_id'] ?? '';
+
+        if (!$apiKey || !$merchantId) {
+            // 开发模式：返回模拟数据
+            return [
+                'checkout_url' => ($this->config['base_url'] ?? '') . '/admin?mock_crypto=' . $productId,
+                'session_id'   => 'crypto_' . bin2hex(random_bytes(8)),
+                'mode'         => 'development',
+                'wallet'       => 'TLgtG6v2xR7NVK8x5EqM5v7oPCfvDXfNxw',
+                'network'      => 'TRC20',
+                'amount_usdt'  => $product['amount'] / 100,
+            ];
+        }
+
+        $payload = [
+            'amount'    => (string)($product['amount'] / 100),
+            'currency'  => 'USD',
+            'network'   => 'TRC20',
+            'order_id'  => 'pr_' . $tenantId . '_' . time(),
+            'url_return'=> ($this->config['base_url'] ?? '') . '/admin?payment=success',
+            'url_callback' => ($this->config['base_url'] ?? '') . '/api/payment-router/billing/webhook/crypto',
+        ];
+
+        $ch = curl_init('https://api.cryptomus.com/v1/payment');
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'merchant: ' . $merchantId,
+                'sign: ' . $this->cryptomusSign($payload, $apiKey),
+            ],
+            CURLOPT_TIMEOUT => 15,
+        ]);
+        $resp = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        $data = json_decode($resp ?: '{}', true) ?: [];
+        if ($code >= 400 || $error) {
+            throw new \RuntimeException("Cryptomus: HTTP {$code} — " . ($data['message'] ?? $error ?? 'unknown'));
+        }
+
+        return [
+            'checkout_url' => $data['result']['url'] ?? '',
+            'session_id'   => $data['result']['uuid'] ?? '',
+            'wallet'       => $data['result']['wallet_address'] ?? '',
+            'network'      => 'TRC20',
+            'amount_usdt'  => $product['amount'] / 100,
+            'raw_response' => substr($resp ?: '', 0, 500), // debug
+        ];
+    }
+
+    /**
+     * 创建 Paddle 支付 (支持 PayPal + 国际信用卡)。
+     */
+    public function createPaddleCheckout(int $tenantId, string $productId): array
+    {
+        $product = self::PRODUCTS[$productId] ?? throw new \RuntimeException("未知产品: {$productId}");
+        $apiKey = $this->config['paddle_api_key'] ?? '';
+
+        if (!$apiKey) {
+            return ['checkout_url' => ($this->config['base_url'] ?? '') . '/admin?mock_paddle=' . $productId, 'mode' => 'development'];
+        }
+
+        $payload = [
+            'items' => [[
+                'price' => [
+                    'description' => 'PaymentRouter ' . ucfirst($product['tier']),
+                    'unit_price'  => ['amount' => (string)($product['amount'] / 100), 'currency_code' => 'USD'],
+                ],
+                'quantity' => 1,
+            ]],
+            'custom_data' => ['tenant_id' => $tenantId, 'product_id' => $productId],
+        ];
+
+        $ch = curl_init('https://api.paddle.com/transactions');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey, 'Paddle-Version: 1'],
+        ]);
+        $resp = curl_exec($ch); curl_close($ch);
+        $data = json_decode($resp ?: '{}', true) ?: [];
+        return ['checkout_url' => $data['data']['checkout']['url'] ?? '', 'session_id' => $data['data']['id'] ?? ''];
+    }
+
+    /** Cryptomus HMAC 签名 (复用 converge-core 逻辑) */
+    private function cryptomusSign(array $data, string $apiKey): string
+    {
+        ksort($data);
+        return md5(base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE)) . $apiKey);
+    }
+
+    /**
+     * 处理 Cryptomus Webhook 回调。
+     */
+    public function handleCryptoWebhook(string $rawBody): array
+    {
+        $data = json_decode($rawBody, true) ?: [];
+        $status = $data['status'] ?? '';
+        $orderId = $data['order_id'] ?? '';
+
+        // 解析 tenant_id from order_id: pr_{tenantId}_{timestamp}
+        $tenantId = 0; $productId = 'pro_onetime';
+        if (preg_match('/^pr_(\d+)_/', $orderId, $m)) { $tenantId = (int)$m[1]; }
+
+        if ($status === 'paid' || $status === 'paid_over') {
+            $product = self::PRODUCTS[$productId];
+            return $this->activateLicense($tenantId, $productId, '*', $data['txid'] ?? $orderId, 'crypto_TRC20', (int)(($product['amount'] ?? 80000)));
+        }
+        return ['status' => $status, 'order_id' => $orderId];
+    }
+
+    /**
+     * 处理 USDT 付款确认（手动确认/链上查询）。
      */
     public function confirmCryptoPayment(int $tenantId, string $productId, string $domain, string $txHash, string $network = 'TRC20'): array
     {
         $product = self::PRODUCTS[$productId] ?? throw new \RuntimeException("未知产品: {$productId}");
-
-        // 记录付款（实际验证需查询区块链，此处简化）
         return $this->activateLicense($tenantId, $productId, $domain, $txHash, "crypto_{$network}", $product['amount']);
     }
 

@@ -98,6 +98,9 @@ function svc(string $name): object {
     $bill   = $container['billing'] ??= new \Converge\Modules\PaymentRouter\Application\BillingManagerUseCase(svc('db'), [
         'stripe_secret_key'      => getenv('STRIPE_SECRET_KEY') ?: '',
         'stripe_webhook_secret'  => getenv('STRIPE_WEBHOOK_SECRET') ?: '',
+        'cryptomus_api_key'      => getenv('CRYPTOMUS_API_KEY') ?: '',
+        'cryptomus_merchant_id'  => getenv('CRYPTOMUS_MERCHANT_ID') ?: '',
+        'paddle_api_key'         => getenv('PADDLE_API_KEY') ?: '',
         'base_url'               => getenv('APP_URL') ?: 'http://localhost:8080',
         'app_secret'             => getenv('APP_SECRET') ?: 'change-me',
     ]);
@@ -137,8 +140,8 @@ if ($path === '/embed.js') {
 
 // Serve static pages
 $staticPages = ['/' => 'index.html', '/login' => 'login.html', '/register' => 'register.html',
-    '/app' => 'app.html', '/admin' => 'admin.html', '/pricing' => 'index.html', '/docs' => 'docs.html',
-    '/checkout' => 'checkout.html'];
+    '/app' => 'app.html', '/admin' => 'admin.html', '/pricing' => 'pricing.html', '/docs' => 'docs.html',
+    '/checkout' => 'checkout.html', '/welcome' => 'welcome.html'];
 foreach ($staticPages as $p => $f) {
     if ($path === $p) { header('Content-Type: text/html; charset=utf-8'); readfile(__DIR__ . '/../../public/' . $f); exit; }
 }
@@ -331,6 +334,14 @@ try {
             => svc('billing')->createStripeCheckout((int)($body['tenant_id'] ?? 0), $body['product_id'] ?? '', $body['domain'] ?? ''),
         $method === 'POST' && $path === '/api/payment-router/billing/webhook/stripe'
             => svc('billing')->handleStripeWebhook(file_get_contents('php://input'), $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? ''),
+        $method === 'POST' && $path === '/api/payment-router/billing/crypto/checkout'
+            => svc('billing')->createCryptoCheckout((int)($body['tenant_id'] ?? 0), $body['product_id'] ?? '', $body['domain'] ?? ''),
+        $method === 'POST' && $path === '/api/payment-router/billing/paddle/checkout'
+            => svc('billing')->createPaddleCheckout((int)($body['tenant_id'] ?? 0), $body['product_id'] ?? ''),
+        $method === 'POST' && $path === '/api/payment-router/billing/webhook/paddle'
+            => (function() { $raw=file_get_contents('php://input'); $data=json_decode($raw,true)?:[]; $type=$data['event_type']??''; if($type==='transaction.completed')return svc('billing')->activateLicense((int)($data['data']['custom_data']['tenant_id']??0),$data['data']['custom_data']['product_id']??'','*',$data['data']['id']??'','paddle',(int)(($data['data']['details']['totals']['subtotal']??'0')*100)); return ['status'=>'pending']; })(),
+        $method === 'POST' && $path === '/api/payment-router/billing/webhook/crypto'
+            => svc('billing')->handleCryptoWebhook(file_get_contents('php://input')),
         $method === 'POST' && $path === '/api/payment-router/billing/crypto/confirm'
             => svc('billing')->confirmCryptoPayment((int)($body['tenant_id'] ?? 0), $body['product_id'] ?? '', $body['domain'] ?? '', $body['tx_hash'] ?? '', $body['network'] ?? 'TRC20'),
         $method === 'GET' && $path === '/api/payment-router/billing/history'

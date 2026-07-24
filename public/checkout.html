@@ -22,6 +22,7 @@
     <h3>🏢 企业版</h3>
     <div class="price">$2,500<span> 起</span></div>
     <ul><li>不限 A/B 站</li><li>DSL 路由脚本</li><li>OEM 白标</li><li>专属支持</li><li>SLA 99.9%</li></ul>
+    <button class="btn btn-primary" onclick="checkout('pro_onetime','crypto')" style="background:#f59e0b">₮ USDT 支付</button>
     <button class="btn btn-primary" onclick="checkout('enterprise_onetime')">$2,500 买断</button>
   </div>
 </div>
@@ -31,7 +32,7 @@
 </div>
 
 <script>
-async function checkout(productId) {
+async function checkout(productId, method) {
   var email = document.getElementById('email')?.value || '';
   var domain = document.getElementById('domain')?.value || '';
   var resultEl = document.getElementById('result');
@@ -39,13 +40,21 @@ async function checkout(productId) {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>跳转中...';
 
+  var endpoint = method === 'crypto' ? '/api/payment-router/billing/crypto/checkout' : '/api/payment-router/billing/checkout';
   try {
-    var resp = await fetch('/api/payment-router/billing/checkout', {
+    var resp = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenant_id: 0, product_id: productId, domain: domain, email: email })
     });
     var data = await resp.json();
+    if (method === 'crypto') {
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `<b>₮ USDT 支付</b><br>网络: ${data.network}<br>金额: ${data.amount_usdt} USDT<br>钱包: <code>${data.wallet||'TLgtG6...fNxw'}</code><br><br><small>转账后联系客服确认</small>`;
+      btn.disabled = false;
+      btn.innerHTML = 'USDT 支付';
+      return;
+    }
     if (data.checkout_url) {
       window.location.href = data.checkout_url;
     } else {

@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Pricing — PaymentRouter</title>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--success:#22c55e;--radius:12px}*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}.container{max-width:1100px;margin:0 auto;padding:40px 24px}h1{text-align:center;font-size:32px;margin-bottom:8px}.subtitle{text-align:center;color:var(--muted);margin-bottom:12px}.toggle{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0 40px}.toggle span{font-size:14px;color:var(--muted)}.toggle span.active{color:var(--text);font-weight:600}.switch{width:48px;height:24px;background:var(--border);border-radius:12px;cursor:pointer;position:relative;transition:background .2s}.switch.on{background:var(--primary)}.switch::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left .2s}.switch.on::after{left:26px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px 24px;text-align:center;position:relative}.card.featured{border-color:var(--primary);border-width:2px}.card h3{font-size:20px;margin-bottom:4px}.card .desc{font-size:13px;color:var(--muted);margin-bottom:20px;min-height:40px}.price{font-size:14px;color:var(--muted);margin-bottom:4px;min-height:20px}.price .amount{font-size:36px;font-weight:800;color:var(--text);display:block}.price .period{color:var(--muted)}ul{list-style:none;text-align:left;margin:20px 0;font-size:14px}li{padding:6px 0;color:var(--muted)}li::before{content:"✓ ";color:var(--success)}.btn{display:block;width:100%;padding:14px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;border:none;text-decoration:none;margin-top:16px;text-align:center}.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#2563eb}.btn-primary:disabled{opacity:.5;cursor:not-allowed}.badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;padding:2px 16px;border-radius:10px;font-size:12px}.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}@keyframes spin{to{transform:rotate(360deg)}}.loading{text-align:center;padding:40px;color:var(--muted)}.footer{text-align:center;padding:20px;color:var(--muted);font-size:13px}@media(max-width:768px){.grid3{grid-template-columns:1fr}}</style></head><body>
+<div class="container">
+<h1>Simple, transparent pricing</h1>
+<p class="subtitle">All plans include Cloak + Payment Routing. Start free, upgrade when you grow.</p>
+
+<div class="toggle">
+  <span id="monthlyLabel" class="active">Monthly</span>
+  <div class="switch" id="billingToggle" onclick="toggleBilling()"></div>
+  <span id="yearlyLabel">Yearly <small style="color:var(--success)">Save 17%</small></span>
+</div>
+
+<div class="grid3" id="tiers">
+  <div class="loading">Loading prices for your region...</div>
+</div>
+
+<p class="footer">All prices include VAT where applicable. 7-day free trial on all plans.</p>
+</div>
+
+<script>
+// ── CONFIG — change these values ──
+const PADDLE_TOKEN = 'test_91b1b1fb4804991d0593593989a';
+const PADDLE_ENV   = 'sandbox';
+const COUNTRY      = ''; // let Paddle auto-detect from IP
+
+// ── Tiers (edit freely) ──
+const TIERS = [
+  { name:'Starter', desc:'For solo sellers', features:['1 A-site + 2 B-sites','All 4 routing strategies','Real-time dashboard','Telegram alerts','Community support'], priceId:{month:'pri_01kya9ae4x76bhz6bwmvz471ek',year:'pri_01kya9aeemyzb6kqzbscakemm6'}},
+  { name:'Pro',     desc:'For growing stores',  features:['2 A-sites + 5 B-sites','Custom strategy params','Source code included','Config export/import','Email support'], priceId:{month:'pri_01kya9af2p357py6sge2ra2n3a',year:'pri_01kya9afc4dd45wftsvmkcqfa4'}, featured:true },
+  { name:'Advanced',desc:'For agencies & enterprise', features:['Unlimited A/B sites','DSL routing scripts','OEM white-label','Multi-tenant dashboard','Dedicated support + SLA'], priceId:{month:'pri_01kya9afzpjwcxv45ns8d03xrk',year:'pri_01kya9agrd3fhz3f6x5wkk54qh'}},
+];
+
+let billing = 'month';
+let paddleReady = false;
+
+// ── Init Paddle ──
+if (PADDLE_TOKEN.startsWith('__')) {
+  document.getElementById('tiers').innerHTML = '<div class="loading">⚠️ Paddle client token not configured. Set PADDLE_CLIENT_TOKEN in .env</div>';
+} else {
+  Paddle.Environment.set(PADDLE_ENV);
+  Paddle.Initialize({ token: PADDLE_TOKEN, eventCallback: onPaddleEvent });
+  paddleReady = true;
+  loadPrices();
+}
+
+function toggleBilling() {
+  billing = billing === 'month' ? 'year' : 'month';
+  document.getElementById('billingToggle').classList.toggle('on', billing === 'year');
+  document.getElementById('monthlyLabel').classList.toggle('active', billing === 'month');
+  document.getElementById('yearlyLabel').classList.toggle('active', billing === 'year');
+  loadPrices();
+}
+
+// ── Load prices via Paddle.PricePreview ──
+async function loadPrices() {
+  if (!paddleReady) return;
+  const tierEl = document.getElementById('tiers');
+  tierEl.innerHTML = '<div class="loading"><span class="spinner"></span> Loading...</div>';
+
+  const priceIds = TIERS.map(t => t.priceId[billing]);
+  const previewOpts = { items: priceIds.map(id => ({ priceId: id, quantity: 1 })) };
+  if (COUNTRY && COUNTRY !== 'OTHERS') previewOpts.address = { countryCode: COUNTRY };
+
+  try {
+    const result = await Paddle.PricePreview(previewOpts);
+    if (!result?.data?.details) throw new Error('No price data');
+
+    const totals = result.data.details.lineItems.map(li => li.formattedTotals?.total || '—');
+    tierEl.innerHTML = TIERS.map((tier, i) => {
+      const total = totals[i] || '—';
+      return `<div class="card${tier.featured?' featured':''}">${tier.featured?'<div class="badge">Most Popular</div>':''}
+        <h3>${tier.name}</h3><p class="desc">${tier.desc}</p>
+        <div class="price"><span class="amount">${total}</span><span class="period">/${billing}</span></div>
+        <ul>${tier.features.map(f=>`<li>${f}</li>`).join('')}</ul>
+        <button class="btn btn-primary" onclick="subscribe('${tier.priceId[billing]}','${tier.name}')">Subscribe</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('PricePreview failed:', e);
+    tierEl.innerHTML = '<div class="loading">⚠️ Could not load prices. <a href="javascript:loadPrices()">Retry</a></div>';
+  }
+}
+
+// ── Open Paddle Checkout overlay ──
+function subscribe(priceId, tierName) {
+  if (!paddleReady) return;
+  Paddle.Checkout.open({
+    items: [{ priceId, quantity: 1 }],
+    settings: { displayMode: 'overlay', variant: 'one-page', allowLogout: false },
+    customer: { },
+  });
+}
+
+function onPaddleEvent(e) {
+  if (e.name === 'checkout.completed') {
+    window.location.href = '/welcome';
+  }
+}
+</script>
+</body></html>

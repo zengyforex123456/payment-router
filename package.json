@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
+    "@paddle/paddle-node-sdk": "^3.8.0",
     "@playwright/test": "^1.40.0",
     "browser-sync": "^3.0.4",
     "esbuild": "^0.28.1",
