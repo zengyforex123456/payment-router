@@ -41,11 +41,13 @@ final class BillingManagerUseCase
         $stripeKey = $this->config['stripe_secret_key'] ?? '';
 
         $sessionData = [
-            'payment_method_types' => ['card'],
             'line_items' => [[
                 'price_data' => [
                     'currency'    => $product['currency'],
-                    'product_data'=> ['name' => "PaymentRouter " . ucfirst($product['tier'])],
+                    'product_data'=> [
+                        'name'     => "PaymentRouter " . ucfirst($product['tier']),
+                        'tax_code' => 'txcd_10000000',
+                    ],
                     'unit_amount' => $product['amount'],
                 ],
                 'quantity' => 1,
@@ -68,7 +70,7 @@ final class BillingManagerUseCase
                 CURLOPT_POSTFIELDS     => http_build_query($sessionData),
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_USERPWD        => "{$stripeKey}:",
-                CURLOPT_HTTPHEADER     => ['Stripe-Version: 2023-10-16'],
+                CURLOPT_HTTPHEADER     => ['Stripe-Version: 2025-03-31.basil'],
                 CURLOPT_TIMEOUT        => 10,
             ]);
             $resp = curl_exec($ch);
