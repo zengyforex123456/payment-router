@@ -11,9 +11,9 @@
   <h3>🌱 入门版</h3><div class="price">$149<span>/月</span></div>
   <ul><li>1 A站 + 2 B站</li><li>全部 4 种策略</li><li>实时仪表盘</li><li>SaaS 托管</li><li>14 天免费试用</li></ul>
   <div class="pay-row">
-    <button class="btn btn-s" onclick="pay('starter_monthly','stripe')">💳 Stripe</button>
-    <button class="btn btn-p" onclick="pay('starter_monthly','paddle')">🏓 Paddle</button>
-    <button class="btn btn-u" onclick="pay('starter_monthly','crypto')">₮ USDT</button>
+    <button class="btn btn-s" onclick="pay('starter_monthly','stripe', event)">💳 Stripe</button>
+    <button class="btn btn-p" onclick="pay('starter_monthly','paddle', event)">🏓 Paddle</button>
+    <button class="btn btn-u" onclick="pay('starter_monthly','crypto', event)">₮ USDT</button>
   </div>
 </div>
 
@@ -24,9 +24,9 @@
   <input class="email-input" id="email" type="email" placeholder="你的邮箱 (接收 License)" required>
   <input class="email-input" id="domain" type="text" placeholder="绑定域名 (如 my-shop.com)">
   <div class="pay-row">
-    <button class="btn btn-s" onclick="pay('pro_onetime','stripe')">💳 Stripe</button>
-    <button class="btn btn-p" onclick="pay('pro_onetime','paddle')">🏓 Paddle</button>
-    <button class="btn btn-u" onclick="pay('pro_onetime','crypto')">₮ USDT</button>
+    <button class="btn btn-s" onclick="pay('pro_onetime','stripe', event)">💳 Stripe</button>
+    <button class="btn btn-p" onclick="pay('pro_onetime','paddle', event)">🏓 Paddle</button>
+    <button class="btn btn-u" onclick="pay('pro_onetime','crypto', event)">₮ USDT</button>
   </div>
 </div>
 
@@ -35,9 +35,9 @@
   <h3>🏢 企业版</h3><div class="price">$2,500<span> 起</span></div>
   <ul><li>不限 A/B 站</li><li>DSL 路由脚本</li><li>OEM 白标</li><li>专属支持</li><li>SLA 99.9%</li></ul>
   <div class="pay-row">
-    <button class="btn btn-s" onclick="pay('enterprise_onetime','stripe')">💳 Stripe</button>
-    <button class="btn btn-p" onclick="pay('enterprise_onetime','paddle')">🏓 Paddle</button>
-    <button class="btn btn-u" onclick="pay('enterprise_onetime','crypto')">₮ USDT</button>
+    <button class="btn btn-s" onclick="pay('enterprise_onetime','stripe', event)">💳 Stripe</button>
+    <button class="btn btn-p" onclick="pay('enterprise_onetime','paddle', event)">🏓 Paddle</button>
+    <button class="btn btn-u" onclick="pay('enterprise_onetime','crypto', event)">₮ USDT</button>
   </div>
 </div>
 
@@ -48,7 +48,8 @@
 </div>
 
 <script>
-async function pay(productId, method) {
+async function pay(productId, method, evt) {
+  var event = evt;
   var email = document.getElementById('email')?.value || '';
   var domain = document.getElementById('domain')?.value || '';
   var resultEl = document.getElementById('result');
