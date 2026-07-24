@@ -139,6 +139,43 @@ if ($path === '/health') {
 // 所有 API 请求惰性连接 DB
 try {
     $result = match (true) {
+        // ── Cloak 斗篷 ──
+        // JS Challenge 页面（爬虫防护）
+        // 行为追踪 Beacon
+        $method === 'POST' && $path === '/cloak/beacon'
+            => (function() use ($body) {
+                require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Application/BehaviorAnalyzer.php';
+                $analyzer = new \Converge\Modules\PaymentRouter\Cloak\Application\BehaviorAnalyzer(svc('db'));
+                return $analyzer->analyze($body);
+            })(),
+        $method === 'GET' && $path === '/cloak/challenge'
+            => (function() use ($body) {
+                require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Infrastructure/BrowserFingerprint.php';
+                header('Content-Type: text/html; charset=utf-8');
+                echo \Converge\Modules\PaymentRouter\Cloak\Infrastructure\BrowserFingerprint::renderChallenge(
+                    $body['real_url'] ?? '/app',
+                    $body['safe_url'] ?? '/'
+                );
+                exit;
+            })(),
+        $method === 'GET' && $path === '/cloak'
+            => (function() use ($body) {
+                require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Domain/CloakVisitor.php';
+                require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Domain/CloakRule.php';
+                require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Domain/CloakDecision.php';
+                require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Application/IpIntelService.php';
+                require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Application/EvaluateCloakUseCase.php';
+                $rules = [];
+                if (isset($container['db'])) {
+                    require_once __DIR__ . '/../../modules/PaymentRouter/Cloak/Infrastructure/MysqlCloakRuleRepository.php';
+                    $repo = new \Converge\Modules\PaymentRouter\Cloak\Infrastructure\MysqlCloakRuleRepository(svc('db'));
+                    $rules = $repo->findAllEnabled();
+                }
+                $v = \Converge\Modules\PaymentRouter\Cloak\Domain\CloakVisitor::fromServer($_SERVER);
+                $engine = new \Converge\Modules\PaymentRouter\Cloak\Application\EvaluateCloakUseCase($rules);
+                return $engine->execute($v, $body['safe_url'] ?? 'https://safe.example.com', $body['real_url'] ?? 'https://real.example.com');
+            })(),
+
         // ── 用户认证 ──
         $method === 'POST' && $path === '/api/auth/register'
             => svc('auth')->register($body['email'] ?? '', $body['password'] ?? ''),
