@@ -8,7 +8,8 @@
     <h3>🌱 入门版</h3>
     <div class="price">$149<span>/月</span></div>
     <ul><li>1 A站 + 2 B站</li><li>全部 4 种策略</li><li>实时仪表盘</li><li>SaaS 托管</li><li>14 天免费试用</li></ul>
-    <button class="btn btn-primary" onclick="checkout('starter_monthly')">$149/月 订阅</button>
+    <button class="btn btn-primary" onclick="checkout('starter_monthly')">💳 $149/月 订阅 (Stripe)</button>
+    <small style="color:var(--muted);font-size:11px;display:block;margin-top:4px">💳 Stripe</small>
   </div>
   <div class="card featured">
     <h3>💼 专业版</h3>
@@ -16,14 +17,15 @@
     <ul><li>2 A站 + 5 B站</li><li>完整源码</li><li>自定义策略</li><li>本地部署</li><li>1 年更新 + 支持</li></ul>
     <input class="email-input" id="email" type="email" placeholder="你的邮箱 (用于接收 License)" required>
     <input class="email-input" id="domain" type="text" placeholder="绑定域名 (如 my-shop.com)">
-    <button class="btn btn-primary" onclick="checkout('pro_onetime')">$800 买断</button>
+    <button class="btn btn-primary" onclick="checkout('pro_onetime')">💳 $800 买断 (Stripe)</button>
   </div>
   <div class="card">
     <h3>🏢 企业版</h3>
     <div class="price">$2,500<span> 起</span></div>
     <ul><li>不限 A/B 站</li><li>DSL 路由脚本</li><li>OEM 白标</li><li>专属支持</li><li>SLA 99.9%</li></ul>
     <button class="btn btn-primary" onclick="checkout('pro_onetime','crypto')" style="background:#f59e0b">₮ USDT 支付</button>
-    <button class="btn btn-primary" onclick="checkout('enterprise_onetime')">$2,500 买断</button>
+    <small style="display:block;text-align:center;color:var(--muted);margin-top:6px">也支持 <a href="/pricing" style="color:var(--primary)">🏓 Paddle (PayPal+卡)</a></small>
+    <button class="btn btn-primary" onclick="checkout('enterprise_onetime')">💳 $2,500 买断 (Stripe)</button>
   </div>
 </div>
 
