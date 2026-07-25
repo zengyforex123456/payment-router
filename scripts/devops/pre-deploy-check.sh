@@ -34,8 +34,8 @@ echo ""
 
 # ─── 0. 对象注册表刷新 (强制，预防管理盲区) ───
 echo "── Registry ──"
-REGISTRY_FILE="$PROJECT_ROOT/reports/devops-registry.json"
-mkdir -p "$PROJECT_ROOT/reports"
+REGISTRY_FILE="$PROJECT_DIR/reports/devops-registry.json"
+mkdir -p "$PROJECT_DIR/reports"
 
 # 检查 registry 新鲜度
 if [ -f "$REGISTRY_FILE" ]; then
