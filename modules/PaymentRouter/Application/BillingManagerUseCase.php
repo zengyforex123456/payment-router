@@ -240,21 +240,23 @@ final class BillingManagerUseCase
             $payload = [
                 'items' => [[ 'price_id' => $paddlePriceId, 'quantity' => 1 ]],
                 'custom_data' => ['tenant_id' => $tenantId, 'product_id' => $productId],
-                'success_url' => $baseUrl . '/app?payment=success',
             ];
         } else {
-            // 动态价格模式
+            // 动态价格模式（非目录物品）
             $payload = [
                 'items' => [[
                     'price' => [
-                        'description' => 'PaymentRouter ' . ucfirst($product['tier']) . ' — ' . $productId,
+                        'description' => 'PaymentRouter ' . ucfirst($product['tier']),
                         'unit_price'  => ['amount' => (string)($product['amount']), 'currency_code' => 'USD'],
                     ],
                     'quantity' => 1,
                 ]],
                 'custom_data' => ['tenant_id' => $tenantId, 'product_id' => $productId],
-                'success_url' => $baseUrl . '/app?payment=success',
             ];
+        }
+        // 设置 checkout URL（成功/取消页在 Paddle 后台配置）
+        if ($baseUrl) {
+            $payload['checkout'] = ['url' => $baseUrl];
         }
 
         $isSandbox = str_starts_with($apiKey, 'pdl_sdbx_');
@@ -274,7 +276,8 @@ final class BillingManagerUseCase
         $data = json_decode($resp ?: '{}', true) ?: [];
         if ($httpCode >= 400 || $curlErr) {
             $msg = $data['error']['detail'] ?? $data['error']['title'] ?? ($curlErr ?: "HTTP {$httpCode}");
-            throw new \RuntimeException("Paddle ({$httpCode}): {$msg}");
+            $debug = isset($data['error']) ? json_encode($data['error'], JSON_UNESCAPED_SLASHES) : '';
+            throw new \RuntimeException("Paddle ({$httpCode}): {$msg}" . ($debug ? " — {$debug}" : ''));
         }
 
         $checkoutUrl = $data['data']['checkout']['url'] ?? '';
