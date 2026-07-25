@@ -242,12 +242,16 @@ final class BillingManagerUseCase
                 'custom_data' => ['tenant_id' => $tenantId, 'product_id' => $productId],
             ];
         } else {
-            // 动态价格模式（非目录物品）
+            // 动态价格模式（非目录物品 — 必须含 product_id + product）
             $payload = [
                 'items' => [[
                     'price' => [
                         'description' => 'PaymentRouter ' . ucfirst($product['tier']),
                         'unit_price'  => ['amount' => (string)($product['amount']), 'currency_code' => 'USD'],
+                        'product'     => [
+                            'name'         => 'PaymentRouter ' . ucfirst($product['tier']),
+                            'tax_category' => 'standard',
+                        ],
                     ],
                     'quantity' => 1,
                 ]],
