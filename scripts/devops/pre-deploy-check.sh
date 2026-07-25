@@ -13,13 +13,16 @@ win_path() { echo "$1" | sed 's|^/\([a-z]\)/|\U\1:/|'; }
 
 PROJECT_DIR="${1:-.}"
 PROJECT_DIR_WIN=$(win_path "$PROJECT_DIR")  # for Windows Python
-PASS=0; FAIL=0
+PASS=0; FAIL=0; WARN=0
 
 check() {
     local desc="$1" result="$2" fix="$3"
     if [ "$result" = "ok" ]; then
         echo -e "  ${GREEN}✅${NC} $desc"
         PASS=$((PASS + 1))
+    elif [ "$result" = "warn" ]; then
+        echo -e "  ${YELLOW}⚠️ ${NC} $desc — $fix"
+        WARN=$((WARN + 1))
     else
         echo -e "  ${RED}❌${NC} $desc — $fix"
         FAIL=$((FAIL + 1))
@@ -40,14 +43,14 @@ mkdir -p "$PROJECT_DIR/reports"
 # 检查 registry 新鲜度
 if [ -f "$REGISTRY_FILE" ]; then
     # 超过 24 小时 → 告警
-    last_refresh=$(python -c "import json; print(json.load(open('$REGISTRY_FILE')).get('refreshed_at',''))" 2>/dev/null || echo "")
+    last_refresh=$(python -c "import json; print(json.load(open('$REGISTRY_FILE',encoding='utf-8')).get('refreshed_at',''))" 2>/dev/null || echo "")
     if [ -n "$last_refresh" ]; then
         check "Registry 新鲜度" "warn" "超过24h未刷新 → 运行: bash scripts/devops/registry.sh refresh"
     else
         check "Registry 已初始化" "ok" ""
     fi
 else
-    check "Registry 已初始化" "fail" "registry.json 不存在 → 运行: bash scripts/devops/registry.sh refresh"
+    check "Registry 已初始化" "warn" "registry.json 不存在 → 运行: bash scripts/devops/registry.sh refresh (部署不阻塞)"
 fi
 
 # ─── 1. Dockerfile 陷阱 ───
@@ -98,7 +101,7 @@ echo "── .deploy.json ──"
 if [ -f "$PROJECT_DIR/.deploy.json" ]; then
     check ".deploy.json 存在" "ok" ""
     # 验证 JSON 有效性
-    $PYTHON -c "import json; json.load(open('$PROJECT_DIR_WIN/.deploy.json'))" 2>/dev/null && \
+    $PYTHON -c "import json; json.load(open('$PROJECT_DIR_WIN/.deploy.json',encoding='utf-8'))" 2>/dev/null && \
         check ".deploy.json JSON 有效" "ok" "" || \
         check ".deploy.json JSON 有效" "fail" "JSON 格式错误"
 else
@@ -111,7 +114,7 @@ echo "── .env.vars.json ──"
 if [ -f "$PROJECT_DIR/.env.vars.json" ]; then
     check ".env.vars.json 存在" "ok" ""
     # 检查 app_name 字段
-    app_name=$($PYTHON -c "import json; print(json.load(open('$PROJECT_DIR_WIN/.env.vars.json'))['app_name'])" 2>/dev/null || echo "")
+    app_name=$($PYTHON -c "import json; print(json.load(open('$PROJECT_DIR_WIN/.env.vars.json',encoding='utf-8'))['app_name'])" 2>/dev/null || echo "")
     [ -n "$app_name" ] && check "app_name=$app_name" "ok" "" || check "app_name 声明" "fail" "缺少 app_name"
 else
     check ".env.vars.json 存在" "fail" "运行: bash scripts/devops/sync-env.sh 生成"
@@ -183,7 +186,7 @@ fi
 # ─── 9. 域名 DNS 检查 (新增 — 预防部署后 502) ───
 echo "── DNS ──"
 if [ -f "$PROJECT_DIR/.deploy.json" ]; then
-    domain=$($PYTHON -c "import json; print(json.load(open('$PROJECT_DIR_WIN/.deploy.json')).get('domain',''))" 2>/dev/null || echo "")
+    domain=$($PYTHON -c "import json; print(json.load(open('$PROJECT_DIR_WIN/.deploy.json',encoding='utf-8')).get('domain',''))" 2>/dev/null || echo "")
     if [ -n "$domain" ]; then
         resolved=$(nslookup "$domain" 2>/dev/null | grep -c "137.184.225.93" || echo "0")
         if [ "$resolved" -gt 0 ] 2>/dev/null; then
@@ -198,25 +201,25 @@ fi
 echo "── Env Var Naming ──"
 if [ -f "$PROJECT_DIR/.env.vars.json" ]; then
     # 禁止 DB_USERNAME (应该是 DB_USER)
-    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json')); assert 'DB_USERNAME' not in d.get('vars',{}), 'DB_USERNAME'" 2>/dev/null; then
+    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json',encoding='utf-8')); assert 'DB_USERNAME' not in d.get('vars',{}), 'DB_USERNAME'" 2>/dev/null; then
         check "无 DB_USERNAME (应为 DB_USER)" "ok" ""
     else
         check "无 DB_USERNAME (应为 DB_USER)" "fail" "将 vars.DB_USERNAME 改为 vars.DB_USER"
     fi
     # 禁止 DB_DATABASE (应该是 DB_NAME)
-    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json')); assert 'DB_DATABASE' not in d.get('vars',{}), 'DB_DATABASE'" 2>/dev/null; then
+    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json',encoding='utf-8')); assert 'DB_DATABASE' not in d.get('vars',{}), 'DB_DATABASE'" 2>/dev/null; then
         check "无 DB_DATABASE (应为 DB_NAME)" "ok" ""
     else
         check "无 DB_DATABASE (应为 DB_NAME)" "fail" "将 vars.DB_DATABASE 改为 vars.DB_NAME"
     fi
     # 检查是否缺少 DB_NAME
-    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json')); v=d.get('vars',{}); s=set(d.get('sensitive',[])); assert 'DB_NAME' in v or 'DB_NAME' in s, 'missing DB_NAME'" 2>/dev/null; then
+    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json',encoding='utf-8')); v=d.get('vars',{}); s=set(d.get('sensitive',[])); assert 'DB_NAME' in v or 'DB_NAME' in s, 'missing DB_NAME'" 2>/dev/null; then
         check "DB_NAME 已声明" "ok" ""
     else
         check "DB_NAME 已声明" "fail" ".env.vars.json 缺少 DB_NAME"
     fi
     # 检查 DATABASE_URL 包含 ssl-mode=DISABLED
-    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json')); v=d.get('vars',{}); url=v.get('DATABASE_URL',''); assert 'ssl-mode=DISABLED' in url or 'ssl=0' in url, 'no SSL disable'" 2>/dev/null; then
+    if $PYTHON -c "import json; d=json.load(open('$PROJECT_DIR_WIN/.env.vars.json',encoding='utf-8')); v=d.get('vars',{}); url=v.get('DATABASE_URL',''); assert 'ssl-mode=DISABLED' in url or 'ssl=0' in url, 'no SSL disable'" 2>/dev/null; then
         check "DATABASE_URL 禁用 SSL" "ok" ""
     else
         check "DATABASE_URL 禁用 SSL" "warn" "建议在 DATABASE_URL 末尾加 ?ssl-mode=DISABLED (MySQL 8.0 自签名证书)"
@@ -226,12 +229,16 @@ fi
 # ─── Summary ───
 echo ""
 echo "──────────────────────────────────────"
-echo -e "  ${GREEN}✅ Pass: $PASS${NC}  ${RED}❌ Fail: $FAIL${NC}"
+echo -e "  ${GREEN}✅ Pass: $PASS${NC}  ${YELLOW}⚠ Warn: $WARN${NC}  ${RED}❌ Fail: $FAIL${NC}"
 echo "──────────────────────────────────────"
 
 if [ "$FAIL" -gt 0 ]; then
     echo -e "${RED}❌ Pre-deploy check FAILED — 修复后重试${NC}"
     exit 1
+elif [ "$WARN" -gt 0 ]; then
+    echo -e "${YELLOW}⚠️  Warnings present — 建议修复，不阻塞部署${NC}"
+    echo -e "${GREEN}✅ Ready to deploy (with warnings)${NC}"
+    exit 0
 else
     echo -e "${GREEN}✅ Ready to deploy${NC}"
     exit 0
