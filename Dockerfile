@@ -20,4 +20,4 @@ RUN chmod +x /entrypoint.sh
 USER app
 
 ENTRYPOINT ["/entrypoint.sh"]
-# cache bust 1784951332
+# cache bust 1784951684
