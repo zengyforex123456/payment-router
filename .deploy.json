@@ -1,0 +1,32 @@
+{
+  "name": "converge-skeleton",
+  "type": "php-standalone",
+  "domain": "paymentrouter.vip",
+  "description": "AB 轮询支付中控系统 — PaymentRouter + Cloak 斗篷模块",
+  "nginx_template": "php-standalone",
+  "services": [
+    {
+      "name": "payment-router",
+      "dockerfile": "docker/payment-router/Dockerfile",
+      "internal_port": 8080,
+      "health": "/health",
+      "command": "php -S 0.0.0.0:8080 -t /var/www /var/www/docker/payment-router/index.php",
+      "env": {
+        "DB_HOST": "converge-mysql-1",
+        "DB_PORT": "3306",
+        "DB_NAME": "payment_router",
+        "DB_USER": "root",
+        "APP_ENV": "production",
+        "APP_URL": "https://paymentrouter.vip"
+      }
+    }
+  ],
+  "database": {
+    "name": "payment_router",
+    "host": "converge-mysql-1",
+    "migrations_dir": "database/migrations"
+  },
+  "secrets": ["DB_PASSWORD", "APP_SECRET", "STRIPE_SECRET_KEY", "PADDLE_API_KEY"],
+  "env_file": ".env.payment-router",
+  "deployed": true
+}
