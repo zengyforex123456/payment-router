@@ -1,0 +1,28 @@
+{
+  "interface": "devops-registry",
+  "version": "1.0",
+  "description": "DevOps 对象注册表 — 所有被管理对象的唯一真相源",
+  "direction": "D0R ↔ D01-D08 + DO1-DO6",
+  "object_types": {
+    "host":          { "discover": "config file", "id_pattern": "host:{ip}" },
+    "project":       { "discover": "scan E:\\project\\*\\.deploy.json", "id_pattern": "project:{name}" },
+    "app":           { "discover": "dokku apps:list", "id_pattern": "app:{name}" },
+    "database":      { "discover": "dokku mysql:list", "id_pattern": "database:{name}" },
+    "secret":        { "discover": "dokku config:export", "id_pattern": "secret:{app}:{key}" },
+    "deployment":    { "discover": "dokku git:report", "id_pattern": "deployment:{app}:{commit}" },
+    "backup":        { "discover": "ls /root/backups/", "id_pattern": "backup:{filename}" },
+    "healthcheck":   { "discover": "read .deploy.json", "id_pattern": "healthcheck:{app}" },
+    "resourcelimit": { "discover": "dokku resource:report", "id_pattern": "resourcelimit:{app}" },
+    "alert":         { "discover": "config/devops-alerts.json", "id_pattern": "alert:{id}" }
+  },
+  "object_schema": {
+    "id": "string (unique identifier)",
+    "type": "string (enum: host|project|app|database|secret|deployment|backup|healthcheck|resourcelimit|alert)",
+    "status": "string (active|pending|deployed|unset|gone)",
+    "props": "object (type-specific properties)",
+    "parent": "string|null (parent object id, e.g. project:converge-skeleton → app:payment-router)",
+    "discovered_at": "string (ISO 8601 timestamp)",
+    "health": "string (ok|gone|error)"
+  },
+  "required_fields": ["id", "type", "status", "props", "discovered_at", "health"]
+}

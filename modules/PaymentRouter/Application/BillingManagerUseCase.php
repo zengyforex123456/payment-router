@@ -111,23 +111,32 @@ final class BillingManagerUseCase
     {
         $webhookSecret = $this->config['stripe_webhook_secret'] ?? '';
 
-        if ($webhookSecret) {
-            $sigParts = explode(',', $sigHeader);
-            $timestamp = '';
-            $signature = '';
-            foreach ($sigParts as $part) {
-                if (str_starts_with($part, 't=')) $timestamp = substr($part, 2);
-                if (str_starts_with($part, 'v1=')) $signature = substr($part, 3);
-            }
-            $signedPayload = "{$timestamp}.{$rawBody}";
-            $expected = hash_hmac('sha256', $signedPayload, $webhookSecret);
-            if (!hash_equals($expected, $signature)) {
-                return ['error' => '签名验证失败'];
-            }
+        // 强制要求 webhook secret — 禁止跳过签名验证
+        if (!$webhookSecret) {
+            http_response_code(500);
+            return ['error' => 'STRIPE_WEBHOOK_SECRET 未配置。运行: dokku config:set payment-router STRIPE_WEBHOOK_SECRET=whsec_xxx'];
+        }
+
+        // 签名验证（Stripe 标准 HMAC-SHA256）
+        $sigParts = explode(',', $sigHeader);
+        $timestamp = ''; $signature = '';
+        foreach ($sigParts as $part) {
+            if (str_starts_with($part, 't=')) $timestamp = substr($part, 2);
+            if (str_starts_with($part, 'v1=')) $signature = substr($part, 3);
+        }
+        if (!$timestamp || !$signature) {
+            http_response_code(400);
+            return ['error' => '缺少 Stripe-Signature 头'];
+        }
+        $signedPayload = "{$timestamp}.{$rawBody}";
+        $expected = hash_hmac('sha256', $signedPayload, $webhookSecret);
+        if (!hash_equals($expected, $signature)) {
+            http_response_code(401);
+            return ['error' => 'Webhook 签名验证失败'];
         }
 
         $event = json_decode($rawBody, true);
-        if (!$event) return ['error' => '无效JSON'];
+        if (!$event) { http_response_code(400); return ['error' => '无效 JSON']; }
 
         $type = $event['type'] ?? '';
         $session = $event['data']['object'] ?? [];
@@ -135,11 +144,21 @@ final class BillingManagerUseCase
 
         // 处理支付成功
         if ($type === 'checkout.session.completed' || $type === 'invoice.paid') {
+            $txId = $session['id'] ?? '';
+
+            // 幂等性检查 — 防止重复处理
+            $stmt = $this->db->prepare('SELECT id FROM payment_router_payments WHERE tx_id = ?');
+            $stmt->bind_param('s', $txId); $stmt->execute();
+            if ($stmt->get_result()->num_rows > 0) {
+                http_response_code(200);
+                return ['status' => 'already_processed', 'tx_id' => $txId];
+            }
+
             return $this->activateLicense(
                 (int)($metadata['tenant_id'] ?? 0),
                 $metadata['product_id'] ?? '',
                 $metadata['domain'] ?? '',
-                $session['id'] ?? '',
+                $txId,
                 'stripe',
                 $session['amount_total'] ?? 0
             );
@@ -152,10 +171,12 @@ final class BillingManagerUseCase
             $txId = $session['id'] ?? '';
             $stmt->bind_param('s', $txId);
             $stmt->execute();
+            http_response_code(200);
             return ['refunded' => true, 'tx_id' => $txId];
         }
 
-        return ['error' => "未处理的事件类型: {$type}"];
+        http_response_code(200);
+        return ['status' => 'ignored', 'type' => $type];
     }
 
     /**
