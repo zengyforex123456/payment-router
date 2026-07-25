@@ -37,7 +37,7 @@ input,select{padding:7px 10px;background:var(--bg);border:1px solid var(--border
 <div class="app" id="app"><div class="sidebar" id="sidebar"></div><div class="main"><div id="page-content"></div></div></div>
 
 <script>
-const API='http://127.0.0.1:8080';let tid=0,user=null;
+const API='';let tid=0,user=null;
 const I={zh:{dashboard:"仪表盘",sites:"站点管理",mappings:"订单映射",strategy:"策略配置",billing:"账单",logout:"退出",aSite:"A 站",bSite:"B 站",addA:"添加A站",addB:"添加B站",processing:"处理中..."},en:{dashboard:"Dashboard",sites:"Sites",mappings:"Mappings",strategy:"Strategy",billing:"Billing",logout:"Logout",aSite:"A-Site",bSite:"B-Site",addA:"Add A-Site",addB:"Add B-Site",processing:"Processing..."}};
 let L=I[navigator.language.startsWith("zh")?"zh":"en"];
 const _=k=>L[k]||k;
