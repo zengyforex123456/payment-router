@@ -228,6 +228,16 @@ if [ -f "$PROJECT_DIR/.env.vars.json" ]; then
     fi
 fi
 
+# ─── 11. 硬编码 localhost 检查 (新增 — 预防 #app-blank-page) ───
+echo "── Hardcoded localhost ──"
+for f in $(find "$PROJECT_DIR/public" -name "*.html" -o -name "*.js" 2>/dev/null); do
+    if grep -q "127\.0\.0\.1\|localhost:8080" "$f" 2>/dev/null; then
+        check "$(basename "$f"): 硬编码 localhost" "fail" "const API='http://127.0.0.1:8080' 应改为 const API='' (相对路径)"
+    else
+        check "$(basename "$f"): 无硬编码 localhost" "ok" ""
+    fi
+done
+
 # ─── Summary ───
 echo ""
 echo "──────────────────────────────────────"
