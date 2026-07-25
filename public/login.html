@@ -1,10 +1,77 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>登录 — PaymentRouter</title>
-<style>:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--danger:#ef4444;--radius:8px}*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:100%;max-width:400px}.card h1{font-size:24px;margin-bottom:24px;text-align:center}.form-group{margin-bottom:16px}.form-group label{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}.form-group input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px}.btn{width:100%;padding:12px;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;border:none}.btn-primary{background:var(--primary);color:#fff;margin-top:8px}.btn-primary:hover{background:#2563eb}.error{background:var(--danger);color:#fff;padding:10px;border-radius:var(--radius);font-size:13px;margin-bottom:16px;display:none}.links{text-align:center;margin-top:20px;font-size:13px;color:var(--muted)}.links a{color:var(--primary);text-decoration:none}</style></head><body>
-<div class="card"><h1>登录</h1><div class="error" id="error"></div>
-<div class="form-group"><label>邮箱</label><input type="email" id="email" required autofocus autocomplete="email"></div><div class="form-group"><label>密码</label><input type="password" id="password" required minlength="8" autocomplete="current-password"></div><button type="button" class="btn btn-primary" id="btn" onclick="login()">登录</button>
+<style>:root{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--primary:#3b82f6;--danger:#ef4444;--warning:#f59e0b;--radius:8px}*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:100%;max-width:400px}.card h1{font-size:24px;margin-bottom:24px;text-align:center}.form-group{margin-bottom:16px}.form-group label{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}.form-group input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px}.btn{width:100%;padding:12px;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;border:none}.btn-primary{background:var(--primary);color:#fff;margin-top:8px}.btn-primary:disabled{opacity:.5;cursor:not-allowed}.error{background:var(--danger);color:#fff;padding:10px;border-radius:var(--radius);font-size:13px;margin-bottom:16px;display:none}.debug{background:var(--warning);color:#000;padding:6px 10px;border-radius:var(--radius);font-size:11px;margin-bottom:12px;font-family:monospace}.links{text-align:center;margin-top:20px;font-size:13px;color:var(--muted)}.links a{color:var(--primary);text-decoration:none}</style></head><body>
+<div class="card"><h1>登录</h1>
+<div class="debug" id="debug">🔍 Login v2.1 | JS: loading...</div>
+<div class="error" id="error"></div>
+<div class="form-group"><label>邮箱</label><input type="email" id="email" required autofocus autocomplete="email"></div><div class="form-group"><label>密码</label><input type="password" id="password" required minlength="8" autocomplete="current-password"></div><button type="button" class="btn btn-primary" id="btn" onclick="doLogin()">登录</button>
 <div class="links">还没有账号？<a href="/register">免费注册</a> · <a href="/">返回首页</a></div></div>
 <script>
-async function login(){const btn=document.getElementById('btn'),err=document.getElementById('error');const email=document.getElementById('email').value.trim();if(!email){err.textContent='请输入邮箱';err.style.display='';return}
-btn.textContent='登录中...';btn.disabled=true;err.style.display='none';
-try{const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),15000);const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:document.getElementById('password').value}),signal:ctrl.signal});clearTimeout(t);const d=await r.json();if(!r.ok)throw new Error(d.error||'登录失败');try{localStorage.setItem('pr_user',JSON.stringify(d))}catch(e){}window.location.href='/app'}catch(ex){err.textContent=ex.name==='AbortError'?'请求超时，请检查网络后重试':(ex.message||'未知错误');err.style.display='';btn.textContent='登录';btn.disabled=false}}</script>
-</body></html>
+var diag = document.getElementById('debug');
+diag.textContent = '🔍 Login v2.1 | JS: loaded ✓ | ' + new Date().toISOString().slice(11,19);
+
+window.onerror = function(msg, url, line) {
+  document.getElementById('error').textContent = 'JS Error: ' + msg + ' (line ' + line + ')';
+  document.getElementById('error').style.display = '';
+  diag.textContent = '🔍 Login v2.1 | JS: ERROR line ' + line + ' | ' + msg;
+  return false;
+};
+
+async function doLogin() {
+  var btn = document.getElementById('btn');
+  var err = document.getElementById('error');
+  var emailEl = document.getElementById('email');
+  var pwEl = document.getElementById('password');
+
+  var email = (emailEl.value || '').trim();
+  var pw = pwEl.value || '';
+
+  diag.textContent = '🔍 doLogin() called | email=' + email;
+
+  if (!email) { err.textContent = '请输入邮箱'; err.style.display = ''; diag.textContent = '🔍 doLogin() | FAIL: empty email'; return; }
+  if (pw.length < 8) { err.textContent = '密码至少 8 位'; err.style.display = ''; diag.textContent = '🔍 doLogin() | FAIL: short password'; return; }
+
+  btn.textContent = '登录中...'; btn.disabled = true;
+  err.style.display = 'none';
+  diag.textContent = '🔍 doLogin() | calling POST /api/auth/login...';
+
+  try {
+    var ctrl = new AbortController();
+    var timeoutId = setTimeout(function() { ctrl.abort(); }, 20000);
+
+    var r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: pw }),
+      signal: ctrl.signal
+    });
+    clearTimeout(timeoutId);
+
+    diag.textContent = '🔍 doLogin() | HTTP ' + r.status + ' received';
+    var txt = await r.text();
+    diag.textContent = '🔍 doLogin() | HTTP ' + r.status + ' | body: ' + txt.substring(0, 100);
+
+    var d;
+    try { d = JSON.parse(txt); }
+    catch(e) { throw new Error('服务器返回异常 (' + r.status + '): ' + (txt || '').substring(0, 80)); }
+
+    if (!r.ok) { throw new Error(d.error || '登录失败 (' + r.status + ')'); }
+
+    diag.textContent = '🔍 doLogin() | SUCCESS user_id=' + (d.user_id || '?') + ' | redirecting...';
+    try { localStorage.setItem('pr_user', JSON.stringify(d)); } catch(e) {}
+    window.location.href = '/app';
+
+  } catch(ex) {
+    diag.textContent = '🔍 doLogin() | ERROR: ' + (ex.name || '') + ' — ' + (ex.message || ex || '');
+    err.textContent = ex.name === 'AbortError' ? '请求超时(20s)，请检查网络后重试' : (ex.message || '未知错误');
+    err.style.display = '';
+    btn.textContent = '登录'; btn.disabled = false;
+  }
+}
+
+// Self-test
+var testEls = ['email','password','btn','error','debug'];
+var missing = testEls.filter(function(id) { return !document.getElementById(id); });
+diag.textContent = missing.length > 0
+  ? '🔍 Login v2.1 | MISSING: ' + missing.join(', ')
+  : '🔍 Login v2.1 | All ' + testEls.length + ' elements ✓ | Ready';
+</script></body></html>
