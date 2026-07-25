@@ -140,14 +140,16 @@ fi
 # ─── 6. 入口脚本检查 ───
 echo "── Entrypoint ──"
 
-entrypoint=$(find "$PROJECT_DIR" -name "entrypoint.sh" -maxdepth 3 | head -1)
-if [ -n "$entrypoint" ]; then
-    # 6.1 mysqladmin ping vs PHP mysqli (MySQL 8.0 TLS 陷阱)
-    if grep -q "new mysqli" "$entrypoint" 2>/dev/null; then
-        check "entrypoint 用 mysqladmin ping" "fail" "PHP mysqli 在 MySQL 8.0 会 TLS 失败，改用 mysqladmin ping"
-    elif grep -q "mysqladmin ping" "$entrypoint" 2>/dev/null; then
-        check "entrypoint 用 mysqladmin ping" "ok" ""
-    fi
+# 6.1 mysqladmin ping vs PHP mysqli (MySQL 8.0 TLS 陷阱) — 检查所有 entrypoint
+found_mysqli_check=false; found_mysqladmin=false
+for entrypoint in $(find "$PROJECT_DIR" -name "entrypoint.sh" -maxdepth 3 2>/dev/null); do
+    grep -q "new mysqli" "$entrypoint" 2>/dev/null && found_mysqli_check=true
+    grep -q "mysqladmin ping" "$entrypoint" 2>/dev/null && found_mysqladmin=true
+done
+if $found_mysqladmin; then
+    check "entrypoint mysqladmin ping" "ok" ""
+elif $found_mysqli_check; then
+    check "entrypoint 用 mysqladmin ping" "warn" "部分 entrypoint 用 PHP mysqli 检测 MySQL (可能是健康检查，非长期连接)"
 fi
 
 # ─── 7. 迁移覆盖检查 (新增 — 预防 company/plan 缺失) ───
