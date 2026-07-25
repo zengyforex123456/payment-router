@@ -149,7 +149,7 @@ $staticPages = ['/' => 'index.html', '/login' => 'login.html', '/register' => 'r
     '/checkout' => 'checkout.html', '/welcome' => 'welcome.html',
     '/terms' => 'terms.html', '/privacy' => 'privacy.html', '/refund' => 'refund.html'];
 foreach ($staticPages as $p => $f) {
-    if ($path === $p) { header('Content-Type: text/html; charset=utf-8'); readfile(__DIR__ . '/../../public/' . $f); exit; }
+    if ($path === $p) { header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-cache, no-store, must-revalidate'); header('Pragma: no-cache'); header('Expires: 0'); readfile(__DIR__ . '/../../public/' . $f); exit; }
 }
 
 // Static files — PHP built-in server serves them directly
