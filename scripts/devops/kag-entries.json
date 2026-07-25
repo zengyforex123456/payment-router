@@ -1,0 +1,113 @@
+[
+  {
+    "name": "dokku-expose-port-mismatch",
+    "title": "Dokku EXPOSE 端口不匹配导致网站不可访问",
+    "description": "Dockerfile EXPOSE 8080 导致 Dokku nginx 监听 8080 而非 80",
+    "metadata_type": "feedback",
+    "tags": ["dokku", "nginx", "deploy", "port"],
+    "maturity": "已验证",
+    "detection": "EXPOSE 8080 in Dockerfile + nginx listen 8080 + curl returns empty",
+    "root_cause": "Dokku 读取 Dockerfile EXPOSE 生成 nginx listen 端口。EXPOSE 8080 导致 nginx 只监听 8080 而非 80，用户浏览器访问 80/443 无法匹配 server block",
+    "fix_steps": "1. 修改 Dockerfile EXPOSE 5000 (Dokku web 标准) 或 EXPOSE 80 (PHP-FPM+Nginx)\n2. Procfile 使用 $PORT 变量\n3. 紧急修复: dokku proxy:disable <app> → proxy:enable → domains:set",
+    "verification": "grep listen /home/dokku/<app>/nginx.conf 应显示 listen 80",
+    "content": {
+      "summary": "Dockerfile EXPOSE 决定 Dokku nginx 监听端口。EXPOSE 8080 → nginx listen 8080 → 用户访问 80/443 无法匹配 → 网站不可访问",
+      "affected": ["payment-router", "adscope"],
+      "prevention": "pre-deploy-check.sh 自动检测 EXPOSE 端口",
+      "sop": "https://github.com/dokku/dokku/issues/xxx"
+    },
+    "related": ["dokku-proxy-disable-resets-domain", "dokku-mysql-tls-self-signed"]
+  },
+  {
+    "name": "dokku-mysql-tls-self-signed",
+    "title": "MySQL 8.0 自签名证书导致 PHP mysqli 连接失败",
+    "description": "PHP new mysqli() 拒绝 MySQL 8.0 自签名 TLS 证书，导致入口脚本超时",
+    "metadata_type": "feedback",
+    "tags": ["dokku", "mysql", "tls", "php"],
+    "maturity": "已验证",
+    "detection": "ERROR 2026 (HY000): TLS/SSL error: self-signed certificate in certificate chain + entrypoint 'MySQL timeout'",
+    "root_cause": "MySQL 8.0 默认启用 TLS，Dokku MySQL 插件生成自签名证书。PHP mysqli 构造函数默认验证证书 → 验证失败 → 连接被拒",
+    "fix_steps": "入口脚本用 mysqladmin ping (支持 --ssl-mode) 替代 PHP mysqli 做健康检查:\n  mysqladmin ping -h \"$DB_HOST\" -u \"$DB_USER\" -p\"$DB_PASSWORD\" --silent\n\n应用层 PHP PDO:\n  new PDO('mysql:...', $user, $pass, [PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false])",
+    "verification": "docker exec <container> mysqladmin ping -h <host> -u <user> -p<pass> --silent",
+    "content": {
+      "summary": "Docker 内网通信不需要 TLS 证书验证。mysqladmin ping (支持 --ssl-mode) 比 PHP mysqli 更适合做容器健康检查",
+      "affected": ["converge"],
+      "prevention": "pre-deploy-check.sh 检测 entrypoint 是否使用 mysqladmin ping",
+      "alternative": "ALTER USER 'mysql'@'%' REQUIRE NONE (仅内网场景)"
+    },
+    "related": ["dokku-expose-port-mismatch"]
+  },
+  {
+    "name": "dokku-proxy-disable-resets-domain",
+    "title": "dokku proxy:disable → proxy:enable 清除域名设置",
+    "description": "proxy:disable 清 Nginx 配置，proxy:enable 重建时用服务器 hostname 替代自定义域名",
+    "metadata_type": "feedback",
+    "tags": ["dokku", "nginx", "domain", "vhost"],
+    "maturity": "已验证",
+    "detection": "proxy:disable → proxy:enable → domains:report 显示服务器 hostname 而非自定义域名",
+    "root_cause": "dokku proxy:disable 清除 nginx config，proxy:enable 重新生成时使用服务器 hostname 作为默认 VHOST，不恢复自定义域名",
+    "fix_steps": "dokku proxy:disable <app>\ndokku proxy:enable <app>\ndokku domains:set <app> example.com www.example.com   # ← 必须！\ndokku proxy:build-config <app>",
+    "verification": "grep 'server_name' /home/dokku/<app>/nginx.conf | grep -v 'server_name _' | grep -v localhost",
+    "content": {
+      "summary": "proxy:disable/enable 的副作用：域名丢失。优先使用 proxy:build-config (不丢域名)",
+      "priority": "1. proxy:build-config > 2. ps:rebuild > 3. proxy:disable+enable+domains:set",
+      "affected": ["payment-router"],
+      "prevention": "部署后自动检查 nginx server_name"
+    },
+    "related": ["dokku-expose-port-mismatch"]
+  },
+  {
+    "name": "mysql-schema-migration-gap",
+    "title": "迁移文件存在但未真正执行 — 表缺列",
+    "description": "MigrationRunner 记录了迁移但 ALTER TABLE 失败（MySQL < 8.0.29 不支持 IF NOT EXISTS）",
+    "metadata_type": "feedback",
+    "tags": ["mysql", "migration", "schema", "dokku"],
+    "maturity": "已验证",
+    "detection": "INSERT 报 Unknown column + migration 文件存在但数据库中列缺失",
+    "root_cause": "MigrationRunner 用 migrations 表追踪，但 MySQL 8.0.28 及更早版本不支持 ALTER TABLE ADD COLUMN IF NOT EXISTS → SQL 语法错误被 catch → 跳过但可能已被记录",
+    "fix_steps": "1. 用 information_schema.COLUMNS 检查列是否存在（先查后加）\n2. 升级 MySQL 到 8.0.29+\n3. 或迁移 SQL 改为 check-and-add 模式",
+    "verification": "docker exec <container> mysql -e 'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME=\"users\"'",
+    "content": {
+      "summary": "迁移追踪系统和实际 schema 可能不一致。部署后验证关键列存在",
+      "affected": ["converge"],
+      "prevention": "pre-deploy-check.sh 第7项: 源码 INSERT/UPDATE 中引用的列名 vs 迁移文件中的 ADD COLUMN 对比"
+    },
+    "related": ["dokku-mysql-tls-self-signed"]
+  },
+  {
+    "name": "windows-python-gitbash-path",
+    "title": "Windows Store Python 无法解析 Git Bash /e/project/ 路径",
+    "description": "python3 从 WindowsApps 运行时无法处理 Git Bash 的 Unix 风格路径",
+    "metadata_type": "feedback",
+    "tags": ["windows", "python", "git-bash", "path"],
+    "maturity": "已验证",
+    "detection": "python3 -c 'open(\"/e/project/...\")' → FileNotFoundError 或 unexpected end of file",
+    "root_cause": "Windows Store Python (python3.exe 在 WindowsApps) 使用 Windows 路径解析器，不接受 Git Bash MSYS 转换的 /e/project/ 路径。而 python (非 Python Store 版本) 可以",
+    "fix_steps": "1. PYTHON=$(command -v python || command -v python3)\n2. win_path() 函数: sed 's|^/([a-z])/|E:/1:/|'\n3. 所有传给 Python 的文件路径先用 win_path 转换",
+    "verification": "python -c \"open('E:/project/...')\" 能读取文件",
+    "content": {
+      "summary": "Git Bash + Windows Python = 路径不兼容。两种修复: win_path 转换或安装非 Store 版本 Python",
+      "affected": ["pre-deploy-check.sh", "sync-env.sh", "deploy.sh"],
+      "prevention": "所有 devops 脚本使用 win_path() 函数"
+    },
+    "related": []
+  },
+  {
+    "name": "dokku-mysql-root-password-access",
+    "title": "Dokku MySQL 容器 root 密码不可直接使用",
+    "description": "docker exec dokku.mysql.X mysql -u root 需要正确的 MYSQL_ROOT_PASSWORD 环境变量",
+    "metadata_type": "feedback",
+    "tags": ["dokku", "mysql", "password", "access"],
+    "maturity": "已验证",
+    "detection": "ERROR 1045 (28000): Access denied for user 'root'@'localhost'",
+    "root_cause": "Dokku MySQL 插件的 root 密码存储在容器环境变量 MYSQL_ROOT_PASSWORD 中，SSH 远程执行时 $MYSQL_ROOT_PASSWORD 不会展开（变量在远程 shell 而非容器内）",
+    "fix_steps": "1. 用应用容器的 PHP 连接（已有 DB 凭据）\n2. 或用 mysql 用户（Dokku link 创建的）\n3. 或用 docker exec <container> printenv MYSQL_PASSWORD 获取密码",
+    "verification": "docker exec dokku.mysql.converge-db mysqladmin ping -u mysql --silent",
+    "content": {
+      "summary": "直接操作数据库优先用应用容器的 PHP 而不是 mysql CLI root 账号",
+      "affected": ["所有"],
+      "prevention": "运维脚本通过应用容器 PHP 访问数据库"
+    },
+    "related": ["dokku-mysql-tls-self-signed", "mysql-schema-migration-gap"]
+  }
+]

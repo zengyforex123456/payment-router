@@ -1,0 +1,69 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, feature/*]
+  workflow_dispatch:
+
+jobs:
+  # ─── Stage 1: 质量门禁 ───
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      gate_pass: ${{ steps.check.outputs.pass }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pre-Deploy Check
+        id: check
+        run: |
+          chmod +x scripts/devops/pre-deploy-check.sh
+          if bash scripts/devops/pre-deploy-check.sh . ; then
+            echo "pass=true" >> $GITHUB_OUTPUT
+          else
+            echo "pass=false" >> $GITHUB_OUTPUT
+            echo "::error::Pre-deploy check failed — fix issues before deploying"
+            exit 1
+          fi
+
+      - name: PHP Syntax
+        run: |
+          find . -name "*.php" -not -path "*/vendor/*" -not -path "*/.claude/*" | while read f; do
+            php -l "$f" || exit 1
+          done
+
+      - name: Schema Dry-Run
+        run: |
+          php scripts/align-schema.php --dry-run --json || true
+
+  # ─── Stage 2: 部署 ───
+  deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deploy to Dokku
+        uses: dokku/github-action@v1
+        with:
+          git_remote_url: 'ssh://dokku@137.184.225.93:22/payment-router'
+          ssh_private_key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+          deploy_branch: main
+
+      - name: Smoke Test
+        run: |
+          sleep 15
+          chmod +x scripts/devops/smoke-test.sh
+          bash scripts/devops/smoke-test.sh payment-router
+
+      - name: Notify
+        if: failure()
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "❌ Deploy failed: ${{ github.repository }} @ ${{ github.sha }}"

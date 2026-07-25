@@ -406,7 +406,20 @@ try {
         str_contains($msg, '拒绝') || str_contains($msg, 'connect') || str_contains($msg, 'DB:') || str_contains($msg, 'SQL:') => 503,
         default => 400,
     };
+
+    // 记录详细错误（含堆栈）
+    error_log(sprintf('[PaymentRouter] %s (%s:%d) %s',
+        $msg, $e->getFile(), $e->getLine(), $e->getTraceAsString()));
+
+    // 生产环境隐藏数据库内部错误
+    $publicMsg = $msg;
+    $isInternal = str_contains($msg, 'Access denied') || str_contains($msg, 'connect')
+        || str_contains($msg, 'DB:') || str_contains($msg, 'SQL:');
+    if ($isInternal && (getenv('APP_ENV') ?: '') === 'production') {
+        $publicMsg = 'Service temporarily unavailable. Please try again later.';
+    }
+
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['error' => $msg], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => $publicMsg], JSON_UNESCAPED_UNICODE);
 }

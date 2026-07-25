@@ -1,0 +1,160 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "description": "Declarative database schema — single source of truth",
+    "managed_by": "scripts/align-schema.php",
+    "note": "Only tables listed here are checked. Other tables are left untouched."
+  },
+  "tables": {
+    "users": {
+      "columns": {
+        "id": "INT UNSIGNED AUTO_INCREMENT PRIMARY KEY",
+        "username": "VARCHAR(50) NOT NULL UNIQUE",
+        "pass_hash": "VARCHAR(255) NOT NULL",
+        "email": "VARCHAR(255) NOT NULL",
+        "company": "VARCHAR(255) DEFAULT NULL",
+        "plan": "VARCHAR(20) DEFAULT 'free'",
+        "role_id": "INT UNSIGNED DEFAULT NULL",
+        "is_active": "TINYINT(1) NOT NULL DEFAULT 1",
+        "timezone": "VARCHAR(50) NOT NULL DEFAULT 'UTC'",
+        "currency": "CHAR(3) NOT NULL DEFAULT 'USD'",
+        "theme": "VARCHAR(20) DEFAULT NULL",
+        "campaign_status_filter": "VARCHAR(20) DEFAULT 'all'",
+        "created_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "updated_at": "DATETIME NULL ON UPDATE CURRENT_TIMESTAMP"
+      },
+      "indexes": [
+        "INDEX idx_username (username)",
+        "INDEX idx_email (email)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "payment_router_users": {
+      "columns": {
+        "id": "INT UNSIGNED AUTO_INCREMENT PRIMARY KEY",
+        "email": "VARCHAR(255) NOT NULL UNIQUE",
+        "pass_hash": "VARCHAR(255) NOT NULL",
+        "tier": "VARCHAR(20) NOT NULL DEFAULT 'community'",
+        "email_verified": "TINYINT(1) NOT NULL DEFAULT 0",
+        "created_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      },
+      "indexes": [
+        "INDEX idx_email (email)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "payment_router_tenant_config": {
+      "columns": {
+        "tenant_id": "INT UNSIGNED NOT NULL PRIMARY KEY",
+        "tier": "VARCHAR(16) NOT NULL DEFAULT 'free'",
+        "status": "VARCHAR(20) DEFAULT 'active'",
+        "created_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "updated_at": "DATETIME NULL ON UPDATE CURRENT_TIMESTAMP"
+      },
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "payment_router_trials": {
+      "columns": {
+        "id": "INT UNSIGNED AUTO_INCREMENT PRIMARY KEY",
+        "tenant_id": "INT UNSIGNED NOT NULL",
+        "started_at": "DATETIME NOT NULL",
+        "expires_at": "DATETIME NOT NULL",
+        "status": "VARCHAR(16) NOT NULL DEFAULT 'active'",
+        "created_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      },
+      "indexes": [
+        "INDEX idx_tenant (tenant_id)",
+        "INDEX idx_status_expires (status, expires_at)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "payment_router_a_sites": {
+      "columns": {
+        "id": "INT UNSIGNED AUTO_INCREMENT PRIMARY KEY",
+        "tenant_id": "INT UNSIGNED NOT NULL DEFAULT 0",
+        "domain": "VARCHAR(255) NOT NULL",
+        "platform": "VARCHAR(20) NOT NULL DEFAULT 'woocommerce'",
+        "api_key": "VARCHAR(64) NOT NULL UNIQUE",
+        "webhook_url": "VARCHAR(512) NULL",
+        "status": "VARCHAR(16) NOT NULL DEFAULT 'active'",
+        "created_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "updated_at": "DATETIME NULL ON UPDATE CURRENT_TIMESTAMP"
+      },
+      "indexes": [
+        "INDEX idx_tenant (tenant_id)",
+        "INDEX idx_status (status)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "payment_router_b_sites": {
+      "columns": {
+        "id": "INT UNSIGNED AUTO_INCREMENT PRIMARY KEY",
+        "tenant_id": "INT UNSIGNED NOT NULL DEFAULT 0",
+        "domain": "VARCHAR(255) NOT NULL",
+        "payment_gateway": "VARCHAR(20) NOT NULL DEFAULT 'paypal'",
+        "weight": "INT UNSIGNED NOT NULL DEFAULT 1",
+        "max_daily_orders": "INT UNSIGNED NOT NULL DEFAULT 50",
+        "status": "VARCHAR(16) NOT NULL DEFAULT 'active'",
+        "cooled_until": "DATETIME NULL",
+        "consecutive_failures": "INT UNSIGNED NOT NULL DEFAULT 0",
+        "created_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "updated_at": "DATETIME NULL ON UPDATE CURRENT_TIMESTAMP"
+      },
+      "indexes": [
+        "INDEX idx_tenant_status (tenant_id, status)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "payment_router_order_mappings": {
+      "columns": {
+        "id": "BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY",
+        "tenant_id": "INT UNSIGNED NOT NULL DEFAULT 0",
+        "a_order_id": "VARCHAR(64) NOT NULL",
+        "b_order_id": "VARCHAR(64) NULL",
+        "a_site_id": "INT UNSIGNED NOT NULL",
+        "b_site_id": "INT UNSIGNED NOT NULL",
+        "amount": "DECIMAL(10,2) NOT NULL",
+        "currency": "VARCHAR(3) NOT NULL DEFAULT 'USD'",
+        "status": "VARCHAR(16) NOT NULL DEFAULT 'pending'",
+        "dispatched_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "paid_at": "DATETIME NULL"
+      },
+      "indexes": [
+        "INDEX idx_tenant_date (tenant_id, dispatched_at)",
+        "INDEX idx_a_order (a_order_id)",
+        "INDEX idx_status (status)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "payment_router_events": {
+      "columns": {
+        "id": "BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY",
+        "tenant_id": "INT UNSIGNED NOT NULL DEFAULT 0",
+        "event_type": "VARCHAR(50) NOT NULL",
+        "aggregate_id": "VARCHAR(64) NULL",
+        "payload": "JSON NOT NULL",
+        "created_at": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      },
+      "indexes": [
+        "INDEX idx_tenant_type (tenant_id, event_type)",
+        "INDEX idx_aggregate (aggregate_id)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "sessions": {
+      "columns": {
+        "id": "VARCHAR(128) NOT NULL PRIMARY KEY",
+        "user_id": "INT NOT NULL",
+        "data": "TEXT NULL",
+        "expires_at": "INT UNSIGNED NOT NULL",
+        "created_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "updated_at": "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+      },
+      "indexes": [
+        "INDEX idx_user_id (user_id)",
+        "INDEX idx_expires_at (expires_at)"
+      ],
+      "engine": "InnoDB DEFAULT CHARSET=utf8mb4"
+    }
+  }
+}
