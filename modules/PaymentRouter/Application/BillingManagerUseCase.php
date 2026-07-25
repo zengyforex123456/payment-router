@@ -40,6 +40,10 @@ final class BillingManagerUseCase
         $product = self::PRODUCTS[$productId] ?? throw new \RuntimeException("未知产品: {$productId}");
         $stripeKey = $this->config['stripe_secret_key'] ?? '';
 
+        if (!$stripeKey || str_starts_with($stripeKey, 'sk_live_xxx')) {
+            throw new \RuntimeException('Stripe 支付未配置。请在服务器运行: dokku config:set payment-router STRIPE_SECRET_KEY=sk_live_xxx');
+        }
+
         $isSubscription = $product['interval'] === 'month' || $product['interval'] === 'year';
         $mode = $isSubscription ? 'subscription' : 'payment';
 
@@ -61,8 +65,8 @@ final class BillingManagerUseCase
                 'quantity' => 1,
             ]],
             'mode'          => $mode,
-            'success_url'   => ($this->config['base_url'] ?? '') . '/admin?payment=success',
-            'cancel_url'    => ($this->config['base_url'] ?? '') . '/admin?payment=cancel',
+            'success_url'   => ($this->config['base_url'] ?? '') . '/app?payment=success',
+            'cancel_url'    => ($this->config['base_url'] ?? '') . '/pricing?payment=cancel',
             'metadata'      => [
                 'tenant_id'  => (string)$tenantId,
                 'product_id' => $productId,
@@ -70,34 +74,34 @@ final class BillingManagerUseCase
             ],
         ];
 
-        // 仅 Stripe key 存在时才实际调用
-        if ($stripeKey) {
-            $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');
-            curl_setopt_array($ch, [
-                CURLOPT_POST           => true,
-                CURLOPT_POSTFIELDS     => http_build_query($sessionData),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_USERPWD        => "{$stripeKey}:",
-                CURLOPT_HTTPHEADER     => ['Stripe-Version: 2025-03-31.basil'],
-                CURLOPT_TIMEOUT        => 10,
-            ]);
-            $resp = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+        $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => http_build_query($sessionData),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERPWD        => "{$stripeKey}:",
+            CURLOPT_HTTPHEADER     => ['Stripe-Version: 2025-03-31.basil'],
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $resp = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
 
-            if ($httpCode !== 200) {
-                throw new \RuntimeException("Stripe error: {$resp}");
-            }
-            $session = json_decode($resp, true);
-            return ['checkout_url' => $session['url'], 'session_id' => $session['id']];
+        if ($httpCode !== 200) {
+            $err = json_decode($resp ?: '{}', true) ?: [];
+            throw new \RuntimeException('Stripe: ' . ($err['error']['message'] ?? "HTTP {$httpCode}"));
+        }
+        if ($curlErr) {
+            throw new \RuntimeException("Stripe 网络错误: {$curlErr}");
         }
 
-        // 开发环境：返回模拟链接
-        return [
-            'checkout_url' => ($this->config['base_url'] ?? 'http://localhost:8080') . '/admin?mock_payment=' . $productId,
-            'session_id'   => 'dev_' . bin2hex(random_bytes(8)),
-            'mode'         => 'development',
-        ];
+        $session = json_decode($resp, true);
+        $url = $session['url'] ?? '';
+        if (!$url) {
+            throw new \RuntimeException('Stripe 返回异常，未获取到支付链接');
+        }
+        return ['checkout_url' => $url, 'session_id' => $session['id']];
     }
 
     /**
@@ -165,15 +169,7 @@ final class BillingManagerUseCase
         $merchantId = $this->config['cryptomus_merchant_id'] ?? '';
 
         if (!$apiKey || !$merchantId) {
-            // 开发模式：返回模拟数据
-            return [
-                'checkout_url' => ($this->config['base_url'] ?? '') . '/admin?mock_crypto=' . $productId,
-                'session_id'   => 'crypto_' . bin2hex(random_bytes(8)),
-                'mode'         => 'development',
-                'wallet'       => 'TLgtG6v2xR7NVK8x5EqM5v7oPCfvDXfNxw',
-                'network'      => 'TRC20',
-                'amount_usdt'  => $product['amount'] / 100,
-            ];
+            throw new \RuntimeException('USDT 支付(Cryptomus)未配置。请在服务器运行: dokku config:set payment-router CRYPTOMUS_API_KEY=xxx CRYPTOMUS_MERCHANT_ID=xxx');
         }
 
         $payload = [
@@ -181,7 +177,7 @@ final class BillingManagerUseCase
             'currency'  => 'USD',
             'network'   => 'TRC20',
             'order_id'  => 'pr_' . $tenantId . '_' . time(),
-            'url_return'=> ($this->config['base_url'] ?? '') . '/admin?payment=success',
+            'url_return'=> ($this->config['base_url'] ?? '') . '/app?payment=success',
             'url_callback' => ($this->config['base_url'] ?? '') . '/api/payment-router/billing/webhook/crypto',
         ];
 
@@ -195,24 +191,30 @@ final class BillingManagerUseCase
                 'merchant: ' . $merchantId,
                 'sign: ' . $this->cryptomusSign($payload, $apiKey),
             ],
-            CURLOPT_TIMEOUT => 15,
+            CURLOPT_TIMEOUT => 20,
         ]);
         $resp = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
+        $curlErr = curl_error($ch);
         curl_close($ch);
+
         $data = json_decode($resp ?: '{}', true) ?: [];
-        if ($code >= 400 || $error) {
-            throw new \RuntimeException("Cryptomus: HTTP {$code} — " . ($data['message'] ?? $error ?? 'unknown'));
+        if ($code >= 400 || $curlErr) {
+            throw new \RuntimeException("Cryptomus ({$code}): " . ($data['message'] ?? $curlErr ?? ''));
+        }
+
+        $result = $data['result'] ?? [];
+        $url = $result['url'] ?? '';
+        if (!$url) {
+            throw new \RuntimeException('Cryptomus 返回异常: ' . substr($resp ?: '', 0, 200));
         }
 
         return [
-            'checkout_url' => $data['result']['url'] ?? '',
-            'session_id'   => $data['result']['uuid'] ?? '',
-            'wallet'       => $data['result']['wallet_address'] ?? '',
+            'checkout_url' => $url,
+            'session_id'   => $result['uuid'] ?? '',
+            'wallet'       => $result['wallet_address'] ?? '',
             'network'      => 'TRC20',
             'amount_usdt'  => $product['amount'] / 100,
-            'raw_response' => substr($resp ?: '', 0, 500), // debug
         ];
     }
 
@@ -224,30 +226,63 @@ final class BillingManagerUseCase
         $product = self::PRODUCTS[$productId] ?? throw new \RuntimeException("未知产品: {$productId}");
         $apiKey = $this->config['paddle_api_key'] ?? '';
 
-        if (!$apiKey) {
-            return ['checkout_url' => ($this->config['base_url'] ?? '') . '/admin?mock_paddle=' . $productId, 'mode' => 'development'];
+        if (!$apiKey || str_starts_with($apiKey, 'pdl_xxx')) {
+            throw new \RuntimeException('Paddle 支付未配置。请在 Paddle 后台创建产品后，运行: dokku config:set payment-router PADDLE_API_KEY=pdl_xxx');
         }
 
-        $payload = [
-            'items' => [[
-                'price' => [
-                    'description' => 'PaymentRouter ' . ucfirst($product['tier']),
-                    'unit_price'  => ['amount' => (string)($product['amount'] / 100), 'currency_code' => 'USD'],
-                ],
-                'quantity' => 1,
-            ]],
-            'custom_data' => ['tenant_id' => $tenantId, 'product_id' => $productId],
-        ];
+        // Paddle 需要预先创建 Price ID（通过 Dashboard 或 API）
+        // 若未配置 price_id → 使用动态定价模式
+        $paddlePriceId = $this->config['paddle_price_' . $productId] ?? '';
+        $baseUrl = $this->config['base_url'] ?? 'http://localhost:8080';
 
-        $ch = curl_init('https://api.paddle.com/transactions');
+        if ($paddlePriceId) {
+            // 预配置价格模式（推荐）
+            $payload = [
+                'items' => [[ 'price_id' => $paddlePriceId, 'quantity' => 1 ]],
+                'custom_data' => ['tenant_id' => $tenantId, 'product_id' => $productId],
+                'success_url' => $baseUrl . '/app?payment=success',
+            ];
+        } else {
+            // 动态价格模式
+            $payload = [
+                'items' => [[
+                    'price' => [
+                        'description' => 'PaymentRouter ' . ucfirst($product['tier']) . ' — ' . $productId,
+                        'unit_price'  => ['amount' => (string)($product['amount']), 'currency_code' => 'USD'],
+                    ],
+                    'quantity' => 1,
+                ]],
+                'custom_data' => ['tenant_id' => $tenantId, 'product_id' => $productId],
+                'success_url' => $baseUrl . '/app?payment=success',
+            ];
+        }
+
+        $isSandbox = str_starts_with($apiKey, 'pdl_sdbx_');
+        $apiHost = $isSandbox ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
+
+        $ch = curl_init($apiHost . '/checkout');
         curl_setopt_array($ch, [
             CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey, 'Paddle-Version: 1'],
         ]);
-        $resp = curl_exec($ch); curl_close($ch);
+        $resp = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
         $data = json_decode($resp ?: '{}', true) ?: [];
-        return ['checkout_url' => $data['data']['checkout']['url'] ?? '', 'session_id' => $data['data']['id'] ?? ''];
+        if ($httpCode >= 400 || $curlErr) {
+            $msg = $data['error']['detail'] ?? $data['error']['title'] ?? ($curlErr ?: "HTTP {$httpCode}");
+            throw new \RuntimeException("Paddle ({$httpCode}): {$msg}");
+        }
+
+        $checkoutUrl = $data['data']['url'] ?? ($data['data']['checkout']['url'] ?? '');
+        if (!$checkoutUrl) {
+            throw new \RuntimeException('Paddle 返回异常: ' . substr($resp ?: '', 0, 300));
+        }
+
+        return ['checkout_url' => $checkoutUrl, 'session_id' => $data['data']['id'] ?? ''];
     }
 
     /** Cryptomus HMAC 签名 (复用 converge-core 逻辑) */
