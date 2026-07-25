@@ -12,7 +12,7 @@ COPY . /var/www/
 RUN chown -R app:app /var/www
 USER app
 
-EXPOSE 8080
+EXPOSE 5000
 
 COPY docker/payment-router/entrypoint.sh /entrypoint.sh
 USER root
