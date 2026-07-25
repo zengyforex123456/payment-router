@@ -22,7 +22,7 @@ WORKDIR /var/www/converge
 COPY . /var/www/converge/
 
 # 生产依赖安装
-RUN composer install --no-dev --no-interaction --optimize-autoloader --no-progress 2>&1
+#RUN composer install --no-dev --no-interaction --optimize-autoloader --no-progress 2>&1
 
 # 构建门禁
 COPY bin/verify-deps.php /tmp/verify-deps.php
