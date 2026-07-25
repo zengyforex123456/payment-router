@@ -200,6 +200,8 @@ final class BillingManagerUseCase
             'order_id'  => 'pr_' . $tenantId . '_' . time(),
             'url_return'=> ($this->config['base_url'] ?? '') . '/app?payment=success',
             'url_callback' => ($this->config['base_url'] ?? '') . '/api/payment-router/billing/webhook/crypto',
+            'lifetime'  => 7200,           // 2小时过期
+            'is_payment_multiple' => false, // 不允许部分支付
         ];
 
         $ch = curl_init('https://api.cryptomus.com/v1/payment');
@@ -313,31 +315,83 @@ final class BillingManagerUseCase
         return ['checkout_url' => $checkoutUrl, 'session_id' => $data['data']['id'] ?? ''];
     }
 
-    /** Cryptomus HMAC 签名 (复用 converge-core 逻辑) */
+    /** Cryptomus HMAC 签名 — 官方算法: md5(json_encode(ksort) + apiKey) */
     private function cryptomusSign(array $data, string $apiKey): string
     {
         ksort($data);
-        return md5(base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE)) . $apiKey);
+        return md5(json_encode($data, JSON_UNESCAPED_UNICODE) . $apiKey);
     }
 
     /**
      * 处理 Cryptomus Webhook 回调。
      */
-    public function handleCryptoWebhook(string $rawBody): array
+    /**
+     * 处理 Cryptomus Webhook 回调（含签名验证 + is_final 检查）。
+     */
+    public function handleCryptoWebhook(string $rawBody, string $headerSign = ''): array
     {
         $data = json_decode($rawBody, true) ?: [];
+        $apiKey = $this->config['cryptomus_api_key'] ?? '';
+
+        // 1. 验证签名（防伪造回调）
+        $receivedSign = $headerSign ?: ($_SERVER['HTTP_SIGN'] ?? '');
+        if ($apiKey && $receivedSign) {
+            // 从 payload 中移除 sign 字段后重新计算
+            $verifyData = $data;
+            unset($verifyData['sign']);
+            $expectedSign = $this->cryptomusSign($verifyData, $apiKey);
+            if (!hash_equals($expectedSign, $receivedSign)) {
+                http_response_code(401);
+                return ['error' => 'Cryptomus webhook 签名验证失败'];
+            }
+        }
+
         $status = $data['status'] ?? '';
         $orderId = $data['order_id'] ?? '';
+        $isFinal = $data['is_final'] ?? false;
+        $uuid = $data['uuid'] ?? '';
 
-        // 解析 tenant_id from order_id: pr_{tenantId}_{timestamp}
+        // 2. 只处理最终状态（is_final=true）— 忽略中间状态
+        if (!$isFinal) {
+            http_response_code(200);
+            return ['status' => 'pending', 'order_id' => $orderId, 'uuid' => $uuid];
+        }
+
+        // 3. 解析 tenant_id from order_id: pr_{tenantId}_{timestamp}
         $tenantId = 0; $productId = 'pro_onetime';
         if (preg_match('/^pr_(\d+)_/', $orderId, $m)) { $tenantId = (int)$m[1]; }
 
-        if ($status === 'paid' || $status === 'paid_over') {
-            $product = self::PRODUCTS[$productId];
-            return $this->activateLicense($tenantId, $productId, '*', $data['txid'] ?? $orderId, 'crypto_TRC20', (int)(($product['amount'] ?? 80000)));
+        // 4. 幂等性检查
+        $stmt = $this->db->prepare('SELECT id FROM payment_router_payments WHERE tx_id = ?');
+        $stmt->bind_param('s', $uuid);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            http_response_code(200);
+            return ['status' => 'already_processed', 'uuid' => $uuid];
         }
-        return ['status' => $status, 'order_id' => $orderId];
+
+        // 5. 金额验证（防篡改）
+        $webhookAmount = (float)($data['amount'] ?? 0);
+        $product = self::PRODUCTS[$productId] ?? ['tier' => 'starter', 'amount' => 80000];
+        $expectedAmount = $product['amount'] / 100; // 美元
+        if ($webhookAmount > 0 && abs($webhookAmount - $expectedAmount) > 1) {
+            error_log("[Cryptomus] Amount mismatch: received={$webhookAmount} expected={$expectedAmount} order={$orderId}");
+        }
+
+        // 6. 处理最终成功状态
+        if ($status === 'paid' || $status === 'paid_over') {
+            return $this->activateLicense($tenantId, $productId, '*', $uuid ?: $orderId, 'crypto_TRC20', (int)(($product['amount'] ?? 80000)));
+        }
+
+        // 7. 处理失败/取消
+        if ($status === 'fail' || $status === 'canceled' || $status === 'system_fail') {
+            error_log("[Cryptomus] Payment failed: status={$status} order={$orderId} uuid={$uuid}");
+            http_response_code(200);
+            return ['status' => $status, 'order_id' => $orderId, 'handled' => true];
+        }
+
+        http_response_code(200);
+        return ['status' => 'ignored', 'order_id' => $orderId, 'crypto_status' => $status];
     }
 
     /**

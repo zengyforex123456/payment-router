@@ -360,7 +360,7 @@ try {
         $method === 'GET' && $path === '/api/payment-router/access'
             => ['has_access' => svc('paddle')->hasAccess($body['customer_id'] ?? '')],
         $method === 'POST' && $path === '/api/payment-router/billing/webhook/crypto'
-            => svc('billing')->handleCryptoWebhook(file_get_contents('php://input')),
+            => svc('billing')->handleCryptoWebhook(file_get_contents('php://input'), $_SERVER['HTTP_SIGN'] ?? ''),
         $method === 'POST' && $path === '/api/payment-router/billing/crypto/confirm'
             => svc('billing')->confirmCryptoPayment((int)($body['tenant_id'] ?? 0), $body['product_id'] ?? '', $body['domain'] ?? '', $body['tx_hash'] ?? '', $body['network'] ?? 'TRC20'),
         $method === 'GET' && $path === '/api/payment-router/billing/history'
