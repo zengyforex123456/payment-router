@@ -260,7 +260,7 @@ final class BillingManagerUseCase
         $isSandbox = str_starts_with($apiKey, 'pdl_sdbx_');
         $apiHost = $isSandbox ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
 
-        $ch = curl_init($apiHost . '/checkout');
+        $ch = curl_init($apiHost . '/transactions');
         curl_setopt_array($ch, [
             CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
@@ -277,7 +277,7 @@ final class BillingManagerUseCase
             throw new \RuntimeException("Paddle ({$httpCode}): {$msg}");
         }
 
-        $checkoutUrl = $data['data']['url'] ?? ($data['data']['checkout']['url'] ?? '');
+        $checkoutUrl = $data['data']['checkout']['url'] ?? '';
         if (!$checkoutUrl) {
             throw new \RuntimeException('Paddle 返回异常: ' . substr($resp ?: '', 0, 300));
         }
