@@ -1,0 +1,25 @@
+name: GitOps Reconcile
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # 每 10 分钟
+  workflow_dispatch:           # 手动触发
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reconcile (Dry Run)
+        run: |
+          chmod +x scripts/devops/reconcile.sh
+          bash scripts/devops/reconcile.sh --dry-run
+
+      - name: Auto-Fix Drift
+        if: github.event_name == 'schedule'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DOKKU_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          bash scripts/devops/reconcile.sh --auto-fix
