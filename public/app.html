@@ -33,70 +33,209 @@ input,select{padding:7px 10px;background:var(--bg);border:1px solid var(--border
 .page{display:none}.page.active{display:block}canvas{max-height:200px}
 .empty{text-align:center;padding:40px;color:var(--muted)}.tier-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px}.tier-community{background:var(--muted);color:#fff}.tier-starter{background:var(--primary);color:#fff}.tier-pro{background:var(--success);color:#fff}.tier-enterprise{background:#c084fc;color:#fff}
 .license-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-family:monospace;font-size:13px;margin-top:8px}
+.dbg{background:var(--warning);color:#000;padding:6px 10px;border-radius:var(--radius);font-size:11px;margin:0 14px 8px 14px;font-family:monospace}
 </style></head><body>
-<div class="app" id="app"><div class="sidebar" id="sidebar"></div><div class="main"><div id="page-content"></div></div></div>
+<div class="app" id="app"><div class="sidebar" id="sidebar"></div><div class="main"><div class="dbg" id="dbg">🔍 App v2.1 | init...</div><div id="page-content"></div></div></div>
 
 <script>
-const API='';let tid=0,user=null;
-const I={zh:{dashboard:"仪表盘",sites:"站点管理",mappings:"订单映射",strategy:"策略配置",billing:"账单",logout:"退出",aSite:"A 站",bSite:"B 站",addA:"添加A站",addB:"添加B站",processing:"处理中..."},en:{dashboard:"Dashboard",sites:"Sites",mappings:"Mappings",strategy:"Strategy",billing:"Billing",logout:"Logout",aSite:"A-Site",bSite:"B-Site",addA:"Add A-Site",addB:"Add B-Site",processing:"Processing..."}};
-let L=I[navigator.language.startsWith("zh")?"zh":"en"];
-const _=k=>L[k]||k;
-function toast(m,t){const e=document.createElement('div');e.className=`toast toast--${t}`;e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),3000)}
+var DBG = document.getElementById('dbg');
+function dlog(msg) { DBG.textContent = '🔍 App v2.1 | ' + msg; console.log('[App]', msg); }
 
-// Init
-(function init(){
-  const u=localStorage.getItem('pr_user');
-  if(!u){window.location.href='/login';return}
-  user=JSON.parse(u);tid=user.user_id||0;
-  renderSidebar();navigate('dashboard');
-})();
+window.onerror = function(msg, url, line) {
+  DBG.textContent = '🔍 App v2.1 | JS ERROR line ' + line + ': ' + msg;
+  document.getElementById('page-content').innerHTML = '<div class="empty" style="color:var(--danger)"><b>JS Error</b><br>' + msg + '<br><small>line ' + line + '</small></div>';
+  return false;
+};
 
-function renderSidebar(){
-  const ti=(user.tier||'community').toUpperCase();
-  document.getElementById('sidebar').innerHTML=`
-    <div class="logo">💳 PaymentRouter <span class="tier-badge tier-${user.tier||'community'}">${ti}</span></div>
-    <a href="#" class="active" onclick="navigate('dashboard')">📊 ${_('dashboard')}</a>
-    <a href="#" onclick="navigate('sites')">🌐 ${_('sites')}</a>
-    <a href="#" onclick="navigate('mappings')">📋 ${_('mappings')}</a>
-    <a href="#" onclick="navigate('strategy')">⚙️ ${_('strategy')}</a>
-    <a href="#" onclick="navigate('billing')">💳 ${_('billing')}</a>
-    <div style="flex:1"></div>
-    <a href="#" onclick="logout()" style="color:var(--danger)">🚪 ${_('logout')}</a>`;
+var API = '', tid = 0, user = null;
+var I = {
+  zh: { dashboard:"仪表盘", sites:"站点管理", mappings:"订单映射", strategy:"策略配置", billing:"账单", logout:"退出", aSite:"A 站", bSite:"B 站", addA:"添加A站", addB:"添加B站", processing:"处理中..." },
+  en: { dashboard:"Dashboard", sites:"Sites", mappings:"Mappings", strategy:"Strategy", billing:"Billing", logout:"Logout", aSite:"A-Site", bSite:"B-Site", addA:"Add A-Site", addB:"Add B-Site", processing:"Processing..." }
+};
+var L = I[(navigator.language||'en').startsWith("zh") ? "zh" : "en"];
+var _ = function(k) { return L[k] || k; };
+function toast(m, t) { var e = document.createElement('div'); e.className = 'toast toast--' + t; e.textContent = m; document.body.appendChild(e); setTimeout(function() { e.remove(); }, 3000); }
+function esc(s) { var d = document.createElement('div'); d.textContent = String(s||''); return d.innerHTML; }
+function api(path, opts) {
+  opts = opts || {};
+  return fetch(API + path, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    signal: opts.signal
+  });
 }
 
-async function navigate(page){
-  document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'));
-  event.target.classList.add('active');
-  const el=document.getElementById('page-content');
-  switch(page){
-    case 'dashboard':el.innerHTML=await dashboardHTML();loadDashboardData();loadTrends();break;
-    case 'sites':el.innerHTML=sitesHTML();loadSitesData();break;
-    case 'mappings':el.innerHTML=mappingsHTML();loadMappingsData();break;
-    case 'strategy':el.innerHTML=strategyHTML();break;
-    case 'billing':el.innerHTML=billingHTML();loadBillingData();break;
+// ── Init ──
+(function init() {
+  dlog('init() starting...');
+  try {
+    var raw = localStorage.getItem('pr_user');
+    if (!raw) { dlog('no pr_user in localStorage, redirecting to /login'); window.location.href = '/login'; return; }
+    user = JSON.parse(raw);
+    tid = user.user_id || 0;
+    dlog('user=' + user.email + ' tier=' + user.tier + ' id=' + tid);
+    renderSidebar();
+    navigate('dashboard');
+  } catch(e) {
+    dlog('INIT ERROR: ' + e.message);
+    document.getElementById('page-content').innerHTML = '<div class="empty" style="color:var(--danger)"><b>初始化失败</b><br>' + e.message + '<br><br><a href="/login" style="color:var(--primary)">重新登录</a></div>';
+  }
+})();
+
+function renderSidebar() {
+  var ti = (user.tier || 'community').toUpperCase();
+  document.getElementById('sidebar').innerHTML =
+    '<div class="logo">💳 PaymentRouter <span class="tier-badge tier-' + (user.tier||'community') + '">' + ti + '</span></div>' +
+    '<a href="#" id="nav-dashboard" class="active" data-page="dashboard">📊 ' + _('dashboard') + '</a>' +
+    '<a href="#" id="nav-sites" data-page="sites">🌐 ' + _('sites') + '</a>' +
+    '<a href="#" id="nav-mappings" data-page="mappings">📋 ' + _('mappings') + '</a>' +
+    '<a href="#" id="nav-strategy" data-page="strategy">⚙️ ' + _('strategy') + '</a>' +
+    '<a href="#" id="nav-billing" data-page="billing">💳 ' + _('billing') + '</a>' +
+    '<div style="flex:1"></div>' +
+    '<a href="#" onclick="logout()" style="color:var(--danger)">🚪 ' + _('logout') + '</a>';
+
+  // Delegate click events (no more inline event.target bugs)
+  document.getElementById('sidebar').addEventListener('click', function(e) {
+    var a = e.target.closest('a[data-page]');
+    if (!a) return;
+    e.preventDefault();
+    var page = a.getAttribute('data-page');
+    document.querySelectorAll('.sidebar a').forEach(function(el) { el.classList.remove('active'); });
+    a.classList.add('active');
+    navigate(page);
+  });
+}
+
+async function navigate(page) {
+  dlog('navigate(' + page + ')');
+  var el = document.getElementById('page-content');
+  try {
+    switch(page) {
+      case 'dashboard': el.innerHTML = await dashboardHTML(); loadDashboardData(); loadTrends(); break;
+      case 'sites': el.innerHTML = sitesHTML(); loadSitesData(); break;
+      case 'mappings': el.innerHTML = mappingsHTML(); loadMappingsData(); break;
+      case 'strategy': el.innerHTML = strategyHTML(); break;
+      case 'billing': el.innerHTML = billingHTML(); loadBillingData(); break;
+      default: el.innerHTML = '<div class="empty">未知页面: ' + page + '</div>';
+    }
+    dlog('navigate(' + page + ') done');
+  } catch(e) {
+    dlog('navigate ERROR: ' + e.message);
+    el.innerHTML = '<div class="empty" style="color:var(--danger)">加载失败: ' + e.message + '</div>';
   }
 }
 
-async function dashboardHTML(){return`<div class="topbar"><h1>📊 ${_('dashboard')}</h1><span style="color:var(--muted);font-size:13px">${user.email}</span></div><div class="grid4" id="cards"></div><div class="grid2"><div class="panel"><div class="panel__header">📈 7天趋势</div><div class="panel__body"><canvas id="trendChart"></canvas></div></div><div class="panel"><div class="panel__header">🏪 B站状态</div><div class="panel__body" id="bCards">${_('processing')}</div></div></div>`}
-async function loadDashboardData(){try{const r=await fetch(`${API}/api/payment-router/dashboard`),d=await r.json();if(!d.summary)return;document.getElementById('cards').innerHTML=`<div class="card"><div class="card__label">总订单</div><div class="card__value">${(d.summary.total_orders||0).toLocaleString()}</div></div><div class="card"><div class="card__label">成功率</div><div class="card__value">${d.summary.success_rate||0}%</div></div><div class="card"><div class="card__label">收入</div><div class="card__value">$${Number(d.summary.total_revenue||0).toLocaleString()}</div></div><div class="card"><div class="card__label">可用B站</div><div class="card__value">${(d.b_sites||[]).filter(b=>b.b_status==='active').length}/${(d.b_sites||[]).length}</div></div>`}catch(e){}}
-async function loadTrends(){try{const r=await fetch(`${API}/api/payment-router/dashboard/trends`),d=await r.json();const ctx=document.getElementById('trendChart')?.getContext('2d');if(!ctx)return;new Chart(ctx,{type:'line',data:{labels:d.labels||[],datasets:[{label:'订单',data:d.orders||[],borderColor:'#3b82f6'},{label:'成功',data:d.paid||[],borderColor:'#22c55e'},{label:'失败',data:d.failed||[],borderColor:'#ef4444'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}}}})}}catch(e){}}
+// ── Dashboard ──
+async function dashboardHTML() {
+  return '<div class="topbar"><h1>📊 ' + _('dashboard') + '</h1><span style="color:var(--muted);font-size:13px">' + (user.email||'') + '</span></div>' +
+    '<div class="grid4" id="cards"></div>' +
+    '<div class="grid2">' +
+    '<div class="panel"><div class="panel__header">📈 7天趋势</div><div class="panel__body"><canvas id="trendChart"></canvas></div></div>' +
+    '<div class="panel"><div class="panel__header">🏪 B站状态</div><div class="panel__body" id="bCards">' + _('processing') + '</div></div>' +
+    '</div>';
+}
 
-function sitesHTML(){return`<div class="topbar"><h1>🌐 ${_('sites')}</h1><div><button class="btn btn--primary btn--sm" onclick="showAddA()">${_('addA')}</button> <button class="btn btn--primary btn--sm" onclick="showAddB()">${_('addB')}</button></div></div><div class="grid2"><div class="panel"><div class="panel__header">🌐 A 站</div><div class="panel__body" id="aList">${_('processing')}</div></div><div class="panel"><div class="panel__header">🏪 B 站</div><div class="panel__body" id="bList">${_('processing')}</div></div></div>`}
-async function loadSitesData(){try{const a=await(await fetch(`${API}/api/payment-router/a-sites`)).json();const b=await(await fetch(`${API}/api/payment-router/b-sites`)).json();document.getElementById('aList').innerHTML=a.length?a.map(s=>`<div class="card" style="margin-bottom:8px"><strong>${esc(s.domain)}</strong> <span class="badge badge--active">${s.status}</span><br><small style="color:var(--muted)">${s.platform} · Key: ${(s.apiKey||'').substring(0,14)}…</small></div>`).join(''):`<div class="empty">暂无 A 站</div>`;document.getElementById('bList').innerHTML=b.length?b.map(s=>{const pct=s.maxDaily>0?Math.round((s.todayOrders||0)/s.maxDaily*100):0;return`<div class="card card--${s.status==='active'?'active':'cooling'}" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><strong>${esc(s.domain)}</strong><span class="badge badge--${s.status}">${s.status}</span></div><small style="color:var(--muted)">${esc(s.gateway)} · W:${s.weight} · ${s.todayOrders||0}/${s.maxDaily||0}</small><div class="progress-bar"><div class="progress-fill progress-fill--${pct>80?'danger':pct>50?'warn':'safe'}" style="width:${Math.min(pct,100)}%"></div></div></div>`}).join(''):`<div class="empty">暂无 B 站</div>`}catch(e){}}
+async function loadDashboardData() {
+  try {
+    var r = await api('/api/payment-router/dashboard');
+    var d = await r.json();
+    if (!d.summary) { dlog('dashboard: no summary returned'); return; }
+    document.getElementById('cards').innerHTML =
+      '<div class="card"><div class="card__label">总订单</div><div class="card__value">' + ((d.summary.total_orders||0).toLocaleString()) + '</div></div>' +
+      '<div class="card"><div class="card__label">成功率</div><div class="card__value">' + (d.summary.success_rate||0) + '%</div></div>' +
+      '<div class="card"><div class="card__label">收入</div><div class="card__value">$' + (Number(d.summary.total_revenue||0).toLocaleString()) + '</div></div>' +
+      '<div class="card"><div class="card__label">可用B站</div><div class="card__value">' + ((d.b_sites||[]).filter(function(b){return b.b_status==='active'}).length) + '/' + ((d.b_sites||[]).length) + '</div></div>';
+  } catch(e) { dlog('loadDashboardData error: ' + e.message); }
+}
 
-async function showAddA(){const d=prompt('域名 (example.com):');if(!d)return;await fetch(`${API}/api/payment-router/a-sites`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenant_id:tid,domain:d})});loadSitesData();toast(`A站 ${d} 已添加`,'success')}
-async function showAddB(){const d=prompt('域名 (pay.example.com):');if(!d)return;await fetch(`${API}/api/payment-router/b-sites`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenant_id:tid,domain:d,payment_gateway:'paypal',weight:3,max_daily_orders:100})});loadSitesData();toast(`B站 ${d} 已添加`,'success')}
+async function loadTrends() {
+  try {
+    var r = await api('/api/payment-router/dashboard/trends');
+    var d = await r.json();
+    var ctx = document.getElementById('trendChart');
+    if (!ctx) return;
+    new Chart(ctx.getContext('2d'), {
+      type: 'line',
+      data: { labels: d.labels||[], datasets: [
+        { label: '订单', data: d.orders||[], borderColor: '#3b82f6' },
+        { label: '成功', data: d.paid||[], borderColor: '#22c55e' },
+        { label: '失败', data: d.failed||[], borderColor: '#ef4444' }
+      ]},
+      options: { responsive: true, plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } } }
+    });
+  } catch(e) { dlog('loadTrends error: ' + e.message); }
+}
 
-function mappingsHTML(){return`<div class="topbar"><h1>📋 ${_('mappings')}</h1></div><div class="panel"><div class="panel__body" id="mList">${_('processing')}</div></div>`}
-async function loadMappingsData(){try{const r=await fetch(`${API}/api/payment-router/mappings`),d=await r.json();document.getElementById('mList').innerHTML=(d.items||[]).length?`<table><thead><tr><th>A订单</th><th>B订单</th><th>金额</th><th>状态</th><th>时间</th></tr></thead><tbody>${d.items.map(m=>`<tr><td><code>${esc(m.a_order_id)}</code></td><td><code>${esc(m.b_order_id||'—')}</code></td><td>$${Number(m.amount).toFixed(2)}</td><td><span class="badge badge--${m.status}">${m.status}</span></td><td>${m.dispatched_at}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">暂无映射</div>'}catch(e){}}
+// ── Sites ──
+function sitesHTML() {
+  return '<div class="topbar"><h1>🌐 ' + _('sites') + '</h1><div><button class="btn btn--primary btn--sm" onclick="showAddA()">' + _('addA') + '</button> <button class="btn btn--primary btn--sm" onclick="showAddB()">' + _('addB') + '</button></div></div>' +
+    '<div class="grid2"><div class="panel"><div class="panel__header">🌐 A 站</div><div class="panel__body" id="aList">' + _('processing') + '</div></div>' +
+    '<div class="panel"><div class="panel__header">🏪 B 站</div><div class="panel__body" id="bList">' + _('processing') + '</div></div></div>';
+}
 
-function strategyHTML(){return`<div class="topbar"><h1>⚙️ ${_('strategy')}</h1></div><div class="panel"><div class="panel__body"><div class="form-group"><label>预设模板</label><select id="preset"><option value="balanced">Balanced — 权重随机</option><option value="weight_priority">Weight Priority</option><option value="safe_mode">Safe Mode — 轮询</option><option value="high_volume">High Volume</option></select></div><button class="btn btn--primary" onclick="applyPreset()">应用</button><div id="stratResult" style="margin-top:8px;color:var(--muted);font-size:12px"></div></div></div>`}
+async function loadSitesData() {
+  try {
+    var a = await (await api('/api/payment-router/a-sites')).json();
+    var b = await (await api('/api/payment-router/b-sites')).json();
+    document.getElementById('aList').innerHTML = a.length ? a.map(function(s) {
+      return '<div class="card" style="margin-bottom:8px"><strong>' + esc(s.domain) + '</strong> <span class="badge badge--active">' + esc(s.status) + '</span><br><small style="color:var(--muted)">' + esc(s.platform) + ' · Key: ' + ((s.apiKey||'').substring(0,14)) + '…</small></div>';
+    }).join('') : '<div class="empty">暂无 A 站 <br><small>点击上方按钮添加</small></div>';
+    document.getElementById('bList').innerHTML = b.length ? b.map(function(s) {
+      var pct = s.maxDaily > 0 ? Math.round((s.todayOrders||0) / s.maxDaily * 100) : 0;
+      return '<div class="card card--' + (s.status==='active'?'active':'cooling') + '" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><strong>' + esc(s.domain) + '</strong><span class="badge badge--' + esc(s.status) + '">' + esc(s.status) + '</span></div><small style="color:var(--muted)">' + esc(s.gateway) + ' · W:' + s.weight + ' · ' + (s.todayOrders||0) + '/' + (s.maxDaily||0) + '</small><div class="progress-bar"><div class="progress-fill progress-fill--' + (pct>80?'danger':pct>50?'warn':'safe') + '" style="width:' + Math.min(pct,100) + '%"></div></div></div>';
+    }).join('') : '<div class="empty">暂无 B 站 <br><small>点击上方按钮添加</small></div>';
+  } catch(e) { dlog('loadSites error: ' + e.message); }
+}
 
-async function applyPreset(){const p=document.getElementById('preset').value;const r=await fetch(`${API}/api/payment-router/strategy`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenant_id:tid,preset:p})});const d=await r.json();document.getElementById('stratResult').textContent=`✅ ${d.name} (${d.routing_method})`;toast('策略已切换','success')}
+async function showAddA() { var d = prompt('域名 (example.com):'); if (!d) return; await api('/api/payment-router/a-sites', { method: 'POST', body: { tenant_id: tid, domain: d } }); loadSitesData(); toast('A站 ' + d + ' 已添加', 'success'); }
+async function showAddB() { var d = prompt('域名 (pay.example.com):'); if (!d) return; await api('/api/payment-router/b-sites', { method: 'POST', body: { tenant_id: tid, domain: d, payment_gateway: 'paypal', weight: 3, max_daily_orders: 100 } }); loadSitesData(); toast('B站 ' + d + ' 已添加', 'success'); }
 
-function billingHTML(){return`<div class="topbar"><h1>💳 ${_('billing')}</h1></div><div class="panel"><div class="panel__header">当前套餐</div><div class="panel__body"><span class="tier-badge tier-${user.tier||'community'}" style="font-size:16px;padding:4px 16px">${(user.tier||'community').toUpperCase()}</span><div style="margin-top:12px;font-size:13px;color:var(--muted)">需要升级？请联系我们: sales@paymentrouter.dev</div></div></div><div class="panel"><div class="panel__header">付款历史</div><div class="panel__body" id="payHistory">${_('processing')}</div></div>`}
-async function loadBillingData(){try{const r=await fetch(`${API}/api/payment-router/billing/history?tenant_id=${tid}`),d=await r.json();document.getElementById('payHistory').innerHTML=d.length?`<table><thead><tr><th>产品</th><th>金额</th><th>渠道</th><th>状态</th><th>时间</th></tr></thead><tbody>${d.map(p=>`<tr><td>${p.product_id}</td><td>$${(p.amount/100).toFixed(2)}</td><td>${p.channel}</td><td><span class="badge badge--${p.status}">${p.status}</span></td><td>${p.created_at}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">暂无付款记录</div>'}catch(e){}}
+// ── Mappings ──
+function mappingsHTML() { return '<div class="topbar"><h1>📋 ' + _('mappings') + '</h1></div><div class="panel"><div class="panel__body" id="mList">' + _('processing') + '</div></div>'; }
+async function loadMappingsData() {
+  try {
+    var r = await api('/api/payment-router/mappings');
+    var d = await r.json();
+    document.getElementById('mList').innerHTML = (d.items||[]).length ?
+      '<table><thead><tr><th>A订单</th><th>B订单</th><th>金额</th><th>状态</th><th>时间</th></tr></thead><tbody>' +
+      d.items.map(function(m) { return '<tr><td><code>' + esc(m.a_order_id) + '</code></td><td><code>' + esc(m.b_order_id||'—') + '</code></td><td>$' + Number(m.amount).toFixed(2) + '</td><td><span class="badge badge--' + esc(m.status) + '">' + esc(m.status) + '</span></td><td>' + (m.dispatched_at||'') + '</td></tr>'; }).join('') +
+      '</tbody></table>' : '<div class="empty">暂无映射</div>';
+  } catch(e) { dlog('loadMappings error: ' + e.message); }
+}
 
-function logout(){localStorage.removeItem('pr_user');window.location.href='/login'}
-function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML}
+// ── Strategy ──
+function strategyHTML() {
+  return '<div class="topbar"><h1>⚙️ ' + _('strategy') + '</h1></div><div class="panel"><div class="panel__body">' +
+    '<div class="form-group"><label>预设模板</label><select id="preset"><option value="balanced">Balanced — 权重随机</option><option value="weight_priority">Weight Priority</option><option value="safe_mode">Safe Mode — 轮询</option><option value="high_volume">High Volume</option></select></div>' +
+    '<button class="btn btn--primary" onclick="applyPreset()">应用</button><div id="stratResult" style="margin-top:8px;color:var(--muted);font-size:12px"></div></div></div>';
+}
+async function applyPreset() {
+  var p = document.getElementById('preset').value;
+  var r = await api('/api/payment-router/strategy', { method: 'POST', body: { tenant_id: tid, preset: p } });
+  var d = await r.json();
+  document.getElementById('stratResult').textContent = '✅ ' + d.name + ' (' + d.routing_method + ')';
+  toast('策略已切换', 'success');
+}
+
+// ── Billing ──
+function billingHTML() {
+  return '<div class="topbar"><h1>💳 ' + _('billing') + '</h1></div>' +
+    '<div class="panel"><div class="panel__header">当前套餐</div><div class="panel__body">' +
+    '<span class="tier-badge tier-' + (user.tier||'community') + '" style="font-size:16px;padding:4px 16px">' + ((user.tier||'community').toUpperCase()) + '</span>' +
+    '<div style="margin-top:12px;font-size:13px;color:var(--muted)">需要升级？<a href="/checkout" style="color:var(--primary)">查看方案</a></div></div></div>' +
+    '<div class="panel"><div class="panel__header">付款历史</div><div class="panel__body" id="payHistory">' + _('processing') + '</div></div>';
+}
+async function loadBillingData() {
+  try {
+    var r = await api('/api/payment-router/billing/history?tenant_id=' + tid);
+    var d = await r.json();
+    document.getElementById('payHistory').innerHTML = d.length ?
+      '<table><thead><tr><th>产品</th><th>金额</th><th>渠道</th><th>状态</th><th>时间</th></tr></thead><tbody>' +
+      d.map(function(p) { return '<tr><td>' + esc(p.product_id) + '</td><td>$' + (p.amount/100).toFixed(2) + '</td><td>' + esc(p.channel) + '</td><td><span class="badge badge--' + (p.status||'') + '">' + esc(p.status) + '</span></td><td>' + (p.created_at||'') + '</td></tr>'; }).join('') +
+      '</tbody></table>' : '<div class="empty">暂无付款记录</div>';
+  } catch(e) { dlog('loadBilling error: ' + e.message); }
+}
+
+function logout() { localStorage.removeItem('pr_user'); window.location.href = '/login'; }
 </script></body></html>
